@@ -5,23 +5,26 @@ export const authService = {
   login: async (credentials) => {
     try {
       const response = await api.post(API_ENDPOINTS.AUTH.LOGIN, credentials);
-      console.log('Login response:', response.data); // Debug log
-      
+      console.log("Login response:", response.data); // Debug log
+
       // Backend returns data nested in response.data.data
       const { token, user } = response.data.data;
-      
+
       if (!token || !user) {
-        throw new Error('Invalid response from server - missing token or user');
+        throw new Error("Invalid response from server - missing token or user");
       }
-      
+
       if (token) {
         localStorage.setItem("token", token);
         localStorage.setItem("user", JSON.stringify(user));
       }
-      
+
       return { token, user };
     } catch (error) {
-      console.error('Login service error:', error.response?.data || error.message);
+      console.error(
+        "Login service error:",
+        error.response?.data || error.message
+      );
       throw error;
     }
   },
