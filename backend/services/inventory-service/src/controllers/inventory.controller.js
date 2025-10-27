@@ -299,6 +299,85 @@ class InventoryController {
       });
     }
   }
+
+  async deleteInventory(req, res) {
+    try {
+      const { productId } = req.params;
+
+      // Check if inventory exists
+      const inventory = await Inventory.findByProductId(productId);
+      if (!inventory) {
+        return res.status(404).json({
+          success: false,
+          message: "Inventory not found",
+        });
+      }
+
+      // Check if there's reserved stock
+      if (inventory.reserved_quantity > 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Cannot delete inventory with reserved stock",
+        });
+      }
+
+      // Delete the inventory
+      await Inventory.delete(productId);
+
+      // Log the deletion as a stock movement
+      await StockMovement.create({
+        product_id: productId,
+        sku: inventory.sku,
+        movement_type: "out",
+        quantity: inventory.quantity,
+        reference_type: "inventory_deletion",
+        notes: "Inventory record deleted",
+      });
+
+      logger.info(`Inventory deleted for product ${productId}`);
+
+      res.json({
+        success: true,
+        message: "Inventory deleted successfully",
+      });
+    } catch (error) {
+      logger.error("Delete inventory error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error deleting inventory",
+        error: error.message,
+      });
+    }
+  }
+
+  async getInventoryById(req, res) {
+    try {
+      const { id } = req.params;
+
+      const inventory = await Inventory.findById(id);
+
+      if (!inventory) {
+        return res.status(404).json({
+          success: false,
+          message: "Inventory not found",
+        });
+      }
+
+      logger.info(`Inventory ${id} retrieved`);
+
+      res.json({
+        success: true,
+        data: inventory,
+      });
+    } catch (error) {
+      logger.error("Get inventory by ID error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error fetching inventory",
+        error: error.message,
+      });
+    }
+  }
 }
 
 module.exports = new InventoryController();

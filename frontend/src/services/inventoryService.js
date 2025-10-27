@@ -18,11 +18,26 @@ inventoryApi.interceptors.request.use((config) => {
 });
 
 export const inventoryService = {
-  // Inventory
+  // Inventory CRUD
+  createInventory: async (inventoryData) => {
+    const response = await inventoryApi.post(
+      API_ENDPOINTS.INVENTORY.BASE,
+      inventoryData
+    );
+    return response.data;
+  },
+
   getAllInventory: async (params) => {
     const response = await inventoryApi.get(API_ENDPOINTS.INVENTORY.BASE, {
       params,
     });
+    return response.data;
+  },
+
+  getInventoryById: async (id) => {
+    const response = await inventoryApi.get(
+      `${API_ENDPOINTS.INVENTORY.BASE}/${id}`
+    );
     return response.data;
   },
 
@@ -33,6 +48,22 @@ export const inventoryService = {
     return response.data;
   },
 
+  updateInventory: async (productId, updateData) => {
+    const response = await inventoryApi.put(
+      `${API_ENDPOINTS.INVENTORY.BASE}/product/${productId}`,
+      updateData
+    );
+    return response.data;
+  },
+
+  deleteInventory: async (productId) => {
+    const response = await inventoryApi.delete(
+      `${API_ENDPOINTS.INVENTORY.BASE}/product/${productId}`
+    );
+    return response.data;
+  },
+
+  // Stock Operations
   adjustStock: async (adjustmentData) => {
     const response = await inventoryApi.post(
       API_ENDPOINTS.INVENTORY.ADJUST,
@@ -59,7 +90,7 @@ export const inventoryService = {
 
   // Stock Movements
   getStockMovements: async (params) => {
-    const response = await inventoryApi.get(API_ENDPOINTS.STOCK_MOVEMENTS, {
+    const response = await inventoryApi.get(API_ENDPOINTS.INVENTORY.MOVEMENTS, {
       params,
     });
     return response.data;
@@ -67,7 +98,7 @@ export const inventoryService = {
 
   getStockMovementsByProductId: async (productId) => {
     const response = await inventoryApi.get(
-      `${API_ENDPOINTS.STOCK_MOVEMENTS}/product/${productId}`
+      `${API_ENDPOINTS.INVENTORY.BASE}/product/${productId}/movements`
     );
     return response.data;
   },

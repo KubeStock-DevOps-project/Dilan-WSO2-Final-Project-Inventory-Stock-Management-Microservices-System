@@ -1,16 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const purchaseOrderController = require("../controllers/purchaseOrder.controller");
-const {
-  purchaseOrderValidation,
-} = require("../middlewares/validation.middleware");
+// const { purchaseOrderValidation } = require("../middlewares/validation.middleware");
 
 // Create a new purchase order
-router.post(
-  "/",
-  purchaseOrderValidation.create,
-  purchaseOrderController.createPurchaseOrder
-);
+router.post("/", purchaseOrderController.createPurchaseOrder);
 
 // Get all purchase orders (with optional filters)
 router.get("/", purchaseOrderController.getAllPurchaseOrders);
@@ -22,18 +16,10 @@ router.get("/stats", purchaseOrderController.getPurchaseOrderStats);
 router.get("/:id", purchaseOrderController.getPurchaseOrderById);
 
 // Update purchase order
-router.put(
-  "/:id",
-  purchaseOrderValidation.update,
-  purchaseOrderController.updatePurchaseOrder
-);
+router.put("/:id", purchaseOrderController.updatePurchaseOrder);
 
 // Update purchase order status
-router.patch(
-  "/:id/status",
-  purchaseOrderValidation.updateStatus,
-  purchaseOrderController.updatePurchaseOrderStatus
-);
+router.patch("/:id/status", purchaseOrderController.updatePurchaseOrderStatus);
 
 // Delete purchase order
 router.delete("/:id", purchaseOrderController.deletePurchaseOrder);

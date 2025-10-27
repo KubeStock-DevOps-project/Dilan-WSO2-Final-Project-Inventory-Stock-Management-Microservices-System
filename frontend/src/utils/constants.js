@@ -22,8 +22,8 @@ export const API_ENDPOINTS = {
     ADJUST: "/api/inventory/adjust",
     RESERVE: "/api/inventory/reserve",
     RELEASE: "/api/inventory/release",
+    MOVEMENTS: "/api/inventory/movements",
   },
-  STOCK_MOVEMENTS: "/api/stock-movements",
 
   // Supplier Service
   SUPPLIERS: "/api/suppliers",

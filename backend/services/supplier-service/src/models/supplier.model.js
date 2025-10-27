@@ -9,16 +9,29 @@ class Supplier {
       email,
       phone,
       address,
-      status = "active",
+      country,
+      payment_terms,
+      rating,
+      is_active = true,
     } = supplierData;
 
     const query = `
-      INSERT INTO suppliers (name, contact_person, email, phone, address, status)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO suppliers (name, contact_person, email, phone, address, country, payment_terms, rating, is_active)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *
     `;
 
-    const values = [name, contact_person, email, phone, address, status];
+    const values = [
+      name,
+      contact_person,
+      email,
+      phone,
+      address,
+      country,
+      payment_terms,
+      rating,
+      is_active,
+    ];
 
     try {
       const result = await db.query(query, values);
@@ -37,9 +50,9 @@ class Supplier {
     const values = [];
     let paramCount = 1;
 
-    if (filters.status) {
-      query += ` AND status = $${paramCount}`;
-      values.push(filters.status);
+    if (filters.is_active !== undefined) {
+      query += ` AND is_active = $${paramCount}`;
+      values.push(filters.is_active);
       paramCount++;
     }
 
@@ -84,7 +97,10 @@ class Supplier {
       "email",
       "phone",
       "address",
-      "status",
+      "country",
+      "payment_terms",
+      "rating",
+      "is_active",
     ];
     const fields = [];
     const values = [];

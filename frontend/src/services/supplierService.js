@@ -52,7 +52,7 @@ export const supplierService = {
     return response.data;
   },
 
-  // Purchase Orders
+  // Purchase Orders CRUD
   getAllPurchaseOrders: async (params) => {
     const response = await supplierApi.get(API_ENDPOINTS.PURCHASE_ORDERS, {
       params,
@@ -75,10 +75,25 @@ export const supplierService = {
     return response.data;
   },
 
-  updatePurchaseOrderStatus: async (id, status) => {
+  updatePurchaseOrder: async (id, poData) => {
+    const response = await supplierApi.put(
+      `${API_ENDPOINTS.PURCHASE_ORDERS}/${id}`,
+      poData
+    );
+    return response.data;
+  },
+
+  updatePOStatus: async (id, status) => {
     const response = await supplierApi.patch(
       `${API_ENDPOINTS.PURCHASE_ORDERS}/${id}/status`,
       { status }
+    );
+    return response.data;
+  },
+
+  deletePurchaseOrder: async (id) => {
+    const response = await supplierApi.delete(
+      `${API_ENDPOINTS.PURCHASE_ORDERS}/${id}`
     );
     return response.data;
   },

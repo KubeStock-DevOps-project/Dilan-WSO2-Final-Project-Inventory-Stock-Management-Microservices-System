@@ -186,6 +186,30 @@ class Inventory {
       throw error;
     }
   }
+
+  static async findById(id) {
+    const query = "SELECT * FROM inventory WHERE id = $1";
+
+    try {
+      const result = await db.query(query, [id]);
+      return result.rows[0];
+    } catch (error) {
+      logger.error("Error finding inventory by ID:", error);
+      throw error;
+    }
+  }
+
+  static async delete(productId) {
+    const query = "DELETE FROM inventory WHERE product_id = $1 RETURNING *";
+
+    try {
+      const result = await db.query(query, [productId]);
+      return result.rows[0];
+    } catch (error) {
+      logger.error("Error deleting inventory:", error);
+      throw error;
+    }
+  }
 }
 
 module.exports = Inventory;

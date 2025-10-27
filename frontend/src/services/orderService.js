@@ -18,7 +18,7 @@ orderApi.interceptors.request.use((config) => {
 });
 
 export const orderService = {
-  // Orders
+  // Orders CRUD
   getAllOrders: async (params) => {
     const response = await orderApi.get(API_ENDPOINTS.ORDERS, { params });
     return response.data;
@@ -34,6 +34,14 @@ export const orderService = {
     return response.data;
   },
 
+  updateOrder: async (id, orderData) => {
+    const response = await orderApi.put(
+      `${API_ENDPOINTS.ORDERS}/${id}`,
+      orderData
+    );
+    return response.data;
+  },
+
   updateOrderStatus: async (id, status) => {
     const response = await orderApi.patch(
       `${API_ENDPOINTS.ORDERS}/${id}/status`,
@@ -42,7 +50,7 @@ export const orderService = {
     return response.data;
   },
 
-  cancelOrder: async (id) => {
+  deleteOrder: async (id) => {
     const response = await orderApi.delete(`${API_ENDPOINTS.ORDERS}/${id}`);
     return response.data;
   },

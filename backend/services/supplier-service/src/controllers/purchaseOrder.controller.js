@@ -1,20 +1,9 @@
 const PurchaseOrder = require("../models/purchaseOrder.model");
 const logger = require("../config/logger");
-const { validationResult } = require("express-validator");
 
 class PurchaseOrderController {
   async createPurchaseOrder(req, res) {
     try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        logger.warn("Purchase order validation failed:", errors.array());
-        return res.status(400).json({
-          success: false,
-          message: "Validation failed",
-          errors: errors.array(),
-        });
-      }
-
       const purchaseOrder = await PurchaseOrder.create(req.body);
 
       logger.info(`Purchase order ${purchaseOrder.id} created successfully`);

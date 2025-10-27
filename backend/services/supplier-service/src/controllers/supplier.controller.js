@@ -1,20 +1,9 @@
 const Supplier = require("../models/supplier.model");
 const logger = require("../config/logger");
-const { validationResult } = require("express-validator");
 
 class SupplierController {
   async createSupplier(req, res) {
     try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        logger.warn("Supplier creation validation failed:", errors.array());
-        return res.status(400).json({
-          success: false,
-          message: "Validation failed",
-          errors: errors.array(),
-        });
-      }
-
       const supplier = await Supplier.create(req.body);
 
       logger.info(`Supplier created: ${supplier.name} by user request`);

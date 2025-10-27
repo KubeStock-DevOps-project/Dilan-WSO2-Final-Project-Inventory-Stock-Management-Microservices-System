@@ -1,10 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const supplierController = require("../controllers/supplier.controller");
-const { supplierValidation } = require("../middlewares/validation.middleware");
+// const { supplierValidation } = require("../middlewares/validation.middleware");
 
 // Create a new supplier
-router.post("/", supplierValidation.create, supplierController.createSupplier);
+router.post("/", supplierController.createSupplier);
 
 // Get all suppliers
 router.get("/", supplierController.getAllSuppliers);
@@ -13,11 +13,7 @@ router.get("/", supplierController.getAllSuppliers);
 router.get("/:id", supplierController.getSupplierById);
 
 // Update supplier
-router.put(
-  "/:id",
-  supplierValidation.update,
-  supplierController.updateSupplier
-);
+router.put("/:id", supplierController.updateSupplier);
 
 // Delete supplier
 router.delete("/:id", supplierController.deleteSupplier);
