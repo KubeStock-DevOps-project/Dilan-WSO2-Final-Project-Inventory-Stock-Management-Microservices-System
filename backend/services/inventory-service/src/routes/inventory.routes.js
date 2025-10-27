@@ -11,7 +11,7 @@ const {
 
 router.post("/", validateCreateInventory, inventoryController.createInventory);
 router.get("/", inventoryController.getAllInventory);
-router.get("/product/:productId", inventoryController.getProductById);
+router.get("/product/:productId", inventoryController.getInventoryByProduct);
 router.put(
   "/product/:productId",
   validateUpdateInventory,
