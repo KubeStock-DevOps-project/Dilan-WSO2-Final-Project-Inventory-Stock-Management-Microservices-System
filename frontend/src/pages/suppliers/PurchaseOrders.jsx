@@ -69,7 +69,7 @@ const PurchaseOrders = () => {
       order_date: new Date().toISOString().split("T")[0],
       expected_delivery_date: "",
       total_amount: "",
-      status: "pending",
+      status: "draft",
       notes: "",
     });
     setEditingPO(null);
@@ -274,9 +274,9 @@ const PurchaseOrders = () => {
                 }
               >
                 <option value="">All Statuses</option>
-                <option value="pending">Pending</option>
+                <option value="draft">Draft</option>
+                <option value="submitted">Submitted</option>
                 <option value="approved">Approved</option>
-                <option value="ordered">Ordered</option>
                 <option value="received">Received</option>
                 <option value="cancelled">Cancelled</option>
               </select>
@@ -382,9 +382,9 @@ const PurchaseOrders = () => {
                     value={formData.status}
                     onChange={handleInputChange}
                   >
-                    <option value="pending">Pending</option>
+                    <option value="draft">Draft</option>
+                    <option value="submitted">Submitted</option>
                     <option value="approved">Approved</option>
-                    <option value="ordered">Ordered</option>
                     <option value="received">Received</option>
                     <option value="cancelled">Cancelled</option>
                   </select>

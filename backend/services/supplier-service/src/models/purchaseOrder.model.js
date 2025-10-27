@@ -5,27 +5,30 @@ class PurchaseOrder {
   static async create(poData) {
     const {
       supplier_id,
-      product_id,
-      quantity,
-      unit_price,
       total_amount,
+      order_date,
       expected_delivery_date,
-      status = "pending",
+      status = "draft",
       notes,
     } = poData;
 
+    // Generate unique PO number
+    const poNumber = `PO-${Date.now()}-${Math.random()
+      .toString(36)
+      .substr(2, 9)
+      .toUpperCase()}`;
+
     const query = `
-      INSERT INTO purchase_orders (supplier_id, product_id, quantity, unit_price, total_amount, expected_delivery_date, status, notes)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      INSERT INTO purchase_orders (po_number, supplier_id, total_amount, order_date, expected_delivery_date, status, notes)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *
     `;
 
     const values = [
+      poNumber,
       supplier_id,
-      product_id,
-      quantity,
-      unit_price,
       total_amount,
+      order_date,
       expected_delivery_date,
       status,
       notes,
@@ -34,7 +37,7 @@ class PurchaseOrder {
     try {
       const result = await db.query(query, values);
       logger.info(
-        `Purchase order created: ID ${result.rows[0].id} for supplier ${supplier_id}`
+        `Purchase order created: ${poNumber} for supplier ${supplier_id}`
       );
       return result.rows[0];
     } catch (error) {
@@ -45,7 +48,7 @@ class PurchaseOrder {
 
   static async findAll(filters = {}) {
     let query = `
-      SELECT po.*, s.name as supplier_name 
+      SELECT po.*, s.name as supplier_name, s.email as supplier_email
       FROM purchase_orders po
       LEFT JOIN suppliers s ON po.supplier_id = s.id
       WHERE 1=1
@@ -75,6 +78,10 @@ class PurchaseOrder {
 
     try {
       const result = await db.query(query, values);
+      logger.info(
+        `Retrieved ${result.rows.length} purchase orders with filters:`,
+        filters
+      );
       return result.rows;
     } catch (error) {
       logger.error("Error fetching purchase orders:", error);
@@ -102,6 +109,8 @@ class PurchaseOrder {
   static async update(id, updates) {
     const allowedFields = [
       "status",
+      "total_amount",
+      "order_date",
       "expected_delivery_date",
       "actual_delivery_date",
       "notes",
