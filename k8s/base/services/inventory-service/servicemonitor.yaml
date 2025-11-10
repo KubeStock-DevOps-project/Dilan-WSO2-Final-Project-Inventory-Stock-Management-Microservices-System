@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: inventory-service-monitor
+  namespace: inventory-system
+  labels:
+    app: inventory-service
+    prometheus: inventory
+spec:
+  selector:
+    matchLabels:
+      app: inventory-service
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 10s
+    scheme: http
