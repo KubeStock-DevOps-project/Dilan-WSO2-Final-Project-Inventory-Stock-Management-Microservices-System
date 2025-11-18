@@ -69,7 +69,15 @@ export const AuthProvider = ({ children }) => {
       navigate("/login");
       return data;
     } catch (error) {
-      const message = error.response?.data?.error || "Registration failed";
+      let message = "Registration failed";
+      if (error.response?.data?.errors) {
+        // Validation errors array
+        message = error.response.data.errors.map((e) => e.message).join(", ");
+      } else if (error.response?.data?.message) {
+        message = error.response.data.message;
+      } else if (error.message) {
+        message = error.message;
+      }
       toast.error(message);
       throw error;
     }

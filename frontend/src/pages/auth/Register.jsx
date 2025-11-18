@@ -10,6 +10,7 @@ const Register = () => {
   const [formData, setFormData] = useState({
     username: "",
     email: "",
+    full_name: "",
     password: "",
     confirmPassword: "",
     role: "warehouse_staff",
@@ -32,6 +33,9 @@ const Register = () => {
     const newErrors = {};
     if (!formData.username) {
       newErrors.username = "Username is required";
+    }
+    if (!formData.full_name) {
+      newErrors.full_name = "Full name is required";
     }
     if (!formData.email) {
       newErrors.email = "Email is required";
@@ -85,6 +89,17 @@ const Register = () => {
           onChange={handleChange}
           error={errors.username}
           placeholder="Enter your username"
+          required
+        />
+
+        <Input
+          label="Full Name"
+          type="text"
+          name="full_name"
+          value={formData.full_name}
+          onChange={handleChange}
+          error={errors.full_name}
+          placeholder="Enter your full name"
           required
         />
 
