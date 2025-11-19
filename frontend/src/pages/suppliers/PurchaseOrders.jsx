@@ -196,9 +196,7 @@ const PurchaseOrders = () => {
       fetchPurchaseOrders();
     } catch (error) {
       console.error("Error rating supplier:", error);
-      toast.error(
-        error.response?.data?.message || "Failed to rate supplier"
-      );
+      toast.error(error.response?.data?.message || "Failed to rate supplier");
     }
   };
 
@@ -214,7 +212,6 @@ const PurchaseOrders = () => {
       rejected: "danger",
     };
     return <Badge variant={variants[status] || "default"}>{status}</Badge>;
-  };
   };
 
   const getSupplierName = (supplierId) => {
