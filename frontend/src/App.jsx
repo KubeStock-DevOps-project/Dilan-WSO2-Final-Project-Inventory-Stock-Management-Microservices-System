@@ -34,10 +34,13 @@ import PricingCalculator from "./pages/products/PricingCalculator";
 import InventoryDashboard from "./pages/inventory/InventoryDashboard";
 import StockMovements from "./pages/inventory/StockMovements";
 import StockAdjustment from "./pages/inventory/StockAdjustment";
+import LowStockAlerts from "./pages/inventory/LowStockAlerts";
 
 // Supplier Pages
 import SupplierList from "./pages/suppliers/SupplierList";
 import PurchaseOrders from "./pages/suppliers/PurchaseOrders";
+import ProductRatings from "./pages/suppliers/ProductRatings";
+import SupplierProfile from "./pages/suppliers/SupplierProfile";
 
 // Order Pages
 import OrderList from "./pages/orders/OrderList";
@@ -120,7 +123,14 @@ function App() {
             />
 
             {/* Product Routes */}
-            <Route path="/products" element={<ProductList />} />
+            <Route
+              path="/products"
+              element={
+                <ProtectedRoute allowedRoles={["admin", "warehouse_staff", "supplier"]}>
+                  <ProductList />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/products/add"
               element={
@@ -145,12 +155,40 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/products/pricing" element={<PricingCalculator />} />
-            <Route path="/categories" element={<CategoryList />} />
+            <Route
+              path="/products/pricing"
+              element={
+                <ProtectedRoute allowedRoles={["admin", "warehouse_staff", "supplier"]}>
+                  <PricingCalculator />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/categories"
+              element={
+                <ProtectedRoute allowedRoles={["admin", "warehouse_staff"]}>
+                  <CategoryList />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Inventory Routes */}
-            <Route path="/inventory" element={<InventoryDashboard />} />
-            <Route path="/inventory/movements" element={<StockMovements />} />
+            <Route
+              path="/inventory"
+              element={
+                <ProtectedRoute allowedRoles={["admin", "warehouse_staff"]}>
+                  <InventoryDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/inventory/movements"
+              element={
+                <ProtectedRoute allowedRoles={["admin", "warehouse_staff"]}>
+                  <StockMovements />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/inventory/adjust"
               element={
@@ -159,15 +197,74 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/inventory/alerts"
+              element={
+                <ProtectedRoute allowedRoles={["admin", "warehouse_staff"]}>
+                  <LowStockAlerts />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Supplier Routes */}
-            <Route path="/suppliers" element={<SupplierList />} />
-            <Route path="/purchase-orders" element={<PurchaseOrders />} />
+            <Route
+              path="/suppliers"
+              element={
+                <ProtectedRoute allowedRoles={["admin", "warehouse_staff"]}>
+                  <SupplierList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/purchase-orders"
+              element={
+                <ProtectedRoute allowedRoles={["admin", "warehouse_staff", "supplier"]}>
+                  <PurchaseOrders />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/product-ratings"
+              element={
+                <ProtectedRoute allowedRoles={["supplier"]}>
+                  <ProductRatings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/supplier-profile"
+              element={
+                <ProtectedRoute allowedRoles={["supplier"]}>
+                  <SupplierProfile />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Order Routes */}
-            <Route path="/orders" element={<OrderList />} />
-            <Route path="/orders/create" element={<OrderCreate />} />
-            <Route path="/orders/:id" element={<OrderDetails />} />
+            <Route
+              path="/orders"
+              element={
+                <ProtectedRoute allowedRoles={["admin", "warehouse_staff"]}>
+                  <OrderList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/orders/create"
+              element={
+                <ProtectedRoute allowedRoles={["admin", "warehouse_staff"]}>
+                  <OrderCreate />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/orders/:id"
+              element={
+                <ProtectedRoute allowedRoles={["admin", "warehouse_staff"]}>
+                  <OrderDetails />
+                </ProtectedRoute>
+              }
+            />
 
             {/* System Routes */}
             <Route

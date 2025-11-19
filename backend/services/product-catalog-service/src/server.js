@@ -15,6 +15,7 @@ const categoryRoutes = require("./routes/category.routes");
 const productRoutes = require("./routes/product.routes");
 const pricingRoutes = require("./routes/pricing.routes");
 const productLifecycleRoutes = require("./routes/productLifecycle.routes");
+const productRatingRoutes = require("./routes/productRating.routes");
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -70,6 +71,7 @@ app.get("/metrics", async (req, res) => {
 // Business Logic Routes (Production-Grade Features)
 app.use("/api/pricing", pricingRoutes);
 app.use("/api/products", productLifecycleRoutes);
+app.use("/api/products", productRatingRoutes);
 
 // Standard CRUD Routes
 app.use("/api/categories", categoryRoutes);

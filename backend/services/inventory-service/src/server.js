@@ -12,6 +12,7 @@ const {
 } = require("./middlewares/metrics");
 const pool = require("./config/database");
 const inventoryRoutes = require("./routes/inventory.routes");
+const lowStockAlertRoutes = require("./routes/lowStockAlert.routes");
 
 const app = express();
 const PORT = process.env.PORT || 3003;
@@ -54,6 +55,7 @@ app.get("/metrics", async (req, res) => {
 });
 
 app.use("/api/inventory", inventoryRoutes);
+app.use("/api/alerts", lowStockAlertRoutes);
 
 app.use((req, res) => {
   res.status(404).json({

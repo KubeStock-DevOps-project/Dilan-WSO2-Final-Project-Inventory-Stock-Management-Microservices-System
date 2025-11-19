@@ -12,6 +12,9 @@ import {
   ChevronRight,
   GitBranch,
   Calculator,
+  AlertTriangle,
+  Star,
+  UserCog,
 } from "lucide-react";
 import { cn } from "../../utils/helpers";
 
@@ -61,6 +64,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       roles: ["admin", "warehouse_staff"],
     },
     {
+      name: "Low Stock Alerts",
+      path: "/inventory/alerts",
+      icon: AlertTriangle,
+      roles: ["admin", "warehouse_staff"],
+    },
+    {
       name: "Suppliers",
       path: "/suppliers",
       icon: Truck,
@@ -71,6 +80,18 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       path: "/purchase-orders",
       icon: ShoppingCart,
       roles: ["admin", "warehouse_staff", "supplier"],
+    },
+    {
+      name: "Rate Products",
+      path: "/product-ratings",
+      icon: Star,
+      roles: ["supplier"],
+    },
+    {
+      name: "My Profile",
+      path: "/supplier-profile",
+      icon: UserCog,
+      roles: ["supplier"],
     },
     {
       name: "Orders",

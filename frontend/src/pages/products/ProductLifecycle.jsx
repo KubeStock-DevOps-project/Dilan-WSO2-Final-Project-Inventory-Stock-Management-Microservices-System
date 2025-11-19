@@ -6,8 +6,11 @@ import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
 import Badge from "../../components/common/Badge";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
+import { useAuth } from "../../context/AuthContext";
 
 const ProductLifecycleManagement = () => {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const [products, setProducts] = useState([]);
   const [pendingApprovals, setPendingApprovals] = useState([]);
   const [lifecycleStats, setLifecycleStats] = useState({});
@@ -114,14 +117,27 @@ const ProductLifecycleManagement = () => {
   };
 
   const getAvailableActions = (state) => {
-    const actions = {
+    const allActions = {
       draft: ["submit-for-approval"],
       pending_approval: ["approve"],
       approved: ["activate"],
       active: ["discontinue"],
       discontinued: ["activate", "archive"],
     };
-    return actions[state] || [];
+    
+    const actions = allActions[state] || [];
+    
+    // Filter actions based on role
+    // Warehouse staff can only submit for approval and discontinue
+    // Only admins can approve and activate
+    if (!isAdmin) {
+      return actions.filter(action => 
+        action === "submit-for-approval" || 
+        action === "discontinue"
+      );
+    }
+    
+    return actions;
   };
 
   if (loading) return <LoadingSpinner />;
@@ -155,8 +171,8 @@ const ProductLifecycleManagement = () => {
         ))}
       </div>
 
-      {/* Pending Approvals */}
-      {pendingApprovals.length > 0 && (
+      {/* Pending Approvals - Admin Only */}
+      {isAdmin && pendingApprovals.length > 0 && (
         <Card>
           <div className="p-6">
             <h2 className="text-xl font-bold mb-4">

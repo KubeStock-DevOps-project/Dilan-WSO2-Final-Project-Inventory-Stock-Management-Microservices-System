@@ -8,8 +8,11 @@ import LoadingSpinner from "../../components/common/LoadingSpinner";
 import Input from "../../components/common/Input";
 import { supplierService } from "../../services/supplierService";
 import { FiPlus, FiEdit, FiTrash2, FiFilter } from "react-icons/fi";
+import { useAuth } from "../../context/AuthContext";
 
 const PurchaseOrders = () => {
+  const { user } = useAuth();
+  const canManagePO = user?.role === "admin" || user?.role === "warehouse_staff";
   const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -229,13 +232,15 @@ const PurchaseOrders = () => {
               Receive
             </Button>
           )}
-          <Button
-            size="sm"
-            variant="danger"
-            onClick={() => handleDelete(row.id)}
-          >
-            <FiTrash2 />
-          </Button>
+          {canManagePO && (
+            <Button
+              size="sm"
+              variant="danger"
+              onClick={() => handleDelete(row.id)}
+            >
+              <FiTrash2 />
+            </Button>
+          )}
         </div>
       ),
     },
@@ -256,9 +261,11 @@ const PurchaseOrders = () => {
           >
             <FiFilter className="mr-2" /> Filters
           </Button>
-          <Button onClick={() => setShowAddModal(true)}>
-            <FiPlus className="mr-2" /> Create PO
-          </Button>
+          {canManagePO && (
+            <Button onClick={() => setShowAddModal(true)}>
+              <FiPlus className="mr-2" /> Create PO
+            </Button>
+          )}
         </div>
       </div>
 
@@ -331,43 +338,49 @@ const PurchaseOrders = () => {
             </h2>
             <form onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-dark-700 mb-2">
-                    Supplier *
-                  </label>
-                  <select
-                    name="supplier_id"
-                    className="w-full px-3 py-2 border border-dark-300 rounded-lg"
-                    value={formData.supplier_id}
+                {canManagePO && (
+                  <div>
+                    <label className="block text-sm font-medium text-dark-700 mb-2">
+                      Supplier *
+                    </label>
+                    <select
+                      name="supplier_id"
+                      className="w-full px-3 py-2 border border-dark-300 rounded-lg"
+                      value={formData.supplier_id}
+                      onChange={handleInputChange}
+                      required
+                    >
+                      <option value="">Select Supplier</option>
+                      {suppliers.map((supplier) => (
+                        <option key={supplier.id} value={supplier.id}>
+                          {supplier.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                {canManagePO && (
+                  <Input
+                    label="Total Amount *"
+                    name="total_amount"
+                    type="number"
+                    step="0.01"
+                    value={formData.total_amount}
                     onChange={handleInputChange}
                     required
-                  >
-                    <option value="">Select Supplier</option>
-                    {suppliers.map((supplier) => (
-                      <option key={supplier.id} value={supplier.id}>
-                        {supplier.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <Input
-                  label="Total Amount *"
-                  name="total_amount"
-                  type="number"
-                  step="0.01"
-                  value={formData.total_amount}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="0.00"
-                />
-                <Input
-                  label="Order Date *"
-                  name="order_date"
-                  type="date"
-                  value={formData.order_date}
-                  onChange={handleInputChange}
-                  required
-                />
+                    placeholder="0.00"
+                  />
+                )}
+                {canManagePO && (
+                  <Input
+                    label="Order Date *"
+                    name="order_date"
+                    type="date"
+                    value={formData.order_date}
+                    onChange={handleInputChange}
+                    required
+                  />
+                )}
                 <Input
                   label="Expected Delivery Date"
                   name="expected_delivery_date"

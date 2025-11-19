@@ -8,11 +8,15 @@ import Badge from "../../components/common/Badge";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import { productService } from "../../services/productService";
 import { formatCurrency } from "../../utils/helpers";
+import { useAuth } from "../../context/AuthContext";
 
 const ProductList = () => {
+  const { user } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+
+  const canManageProducts = user?.role === "admin" || user?.role === "warehouse_staff";
 
   useEffect(() => {
     fetchProducts();
@@ -47,12 +51,14 @@ const ProductList = () => {
           <h1 className="text-3xl font-bold text-dark-900">Products</h1>
           <p className="text-dark-600 mt-2">Manage your product catalog</p>
         </div>
-        <Link to="/products/add">
-          <Button variant="primary">
-            <Plus size={20} className="mr-2" />
-            Add Product
-          </Button>
-        </Link>
+        {canManageProducts && (
+          <Link to="/products/add">
+            <Button variant="primary">
+              <Plus size={20} className="mr-2" />
+              Add Product
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Filters */}
@@ -101,11 +107,17 @@ const ProductList = () => {
                 {product.is_active ? "Active" : "Inactive"}
               </Badge>
             </div>
-            <Link to={`/products/edit/${product.id}`}>
-              <Button variant="outline" size="sm" className="w-full">
-                View Details
+            {canManageProducts ? (
+              <Link to={`/products/edit/${product.id}`}>
+                <Button variant="outline" size="sm" className="w-full">
+                  View Details
+                </Button>
+              </Link>
+            ) : (
+              <Button variant="outline" size="sm" className="w-full" disabled>
+                View Only
               </Button>
-            </Link>
+            )}
           </Card>
         ))}
       </div>
