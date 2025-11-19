@@ -197,9 +197,9 @@ class SupplierController {
   // Get current supplier's profile (for supplier role)
   async getMyProfile(req, res) {
     try {
-      const supplierId = req.user.id; // From auth middleware
+      const userId = req.user.id; // From auth middleware
 
-      const supplier = await Supplier.findById(supplierId);
+      const supplier = await Supplier.findByUserId(userId);
 
       if (!supplier) {
         return res.status(404).json({
@@ -225,8 +225,18 @@ class SupplierController {
   // Update supplier profile (for supplier role)
   async updateMyProfile(req, res) {
     try {
-      const supplierId = req.user.id; // From auth middleware
+      const userId = req.user.id; // From auth middleware
       const allowedFields = ["contact_person", "email", "phone", "address"];
+
+      // First find the supplier by user_id
+      const supplier = await Supplier.findByUserId(userId);
+
+      if (!supplier) {
+        return res.status(404).json({
+          success: false,
+          message: "Supplier profile not found",
+        });
+      }
 
       const updateData = {};
       allowedFields.forEach((field) => {
@@ -242,21 +252,16 @@ class SupplierController {
         });
       }
 
-      const supplier = await Supplier.update(supplierId, updateData);
+      const updatedSupplier = await Supplier.update(supplier.id, updateData);
 
-      if (!supplier) {
-        return res.status(404).json({
-          success: false,
-          message: "Supplier profile not found",
-        });
-      }
-
-      logger.info(`Supplier ${supplierId} updated their profile`);
+      logger.info(
+        `Supplier ${supplier.id} (user ${userId}) updated their profile`
+      );
 
       res.json({
         success: true,
         message: "Profile updated successfully",
-        data: supplier,
+        data: updatedSupplier,
       });
     } catch (error) {
       logger.error(`Update supplier profile error:`, error);

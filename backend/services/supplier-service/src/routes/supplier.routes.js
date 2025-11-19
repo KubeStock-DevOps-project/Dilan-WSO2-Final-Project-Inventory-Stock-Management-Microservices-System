@@ -9,17 +9,19 @@ router.post("/", supplierController.createSupplier);
 // Get all suppliers
 router.get("/", supplierController.getAllSuppliers);
 
-// Get supplier by ID
-router.get("/:id", supplierController.getSupplierById);
-
-// Get supplier performance metrics
-router.get("/:id/performance", supplierController.getSupplierPerformance);
+// IMPORTANT: Specific routes must come BEFORE parameterized routes like /:id
 
 // Get current supplier's profile (for supplier users) - protected route
 router.get("/profile/me", authMiddleware, supplierController.getMyProfile);
 
 // Update supplier profile (for supplier users) - protected route
 router.put("/profile/me", authMiddleware, supplierController.updateMyProfile);
+
+// Get supplier by ID
+router.get("/:id", supplierController.getSupplierById);
+
+// Get supplier performance metrics
+router.get("/:id/performance", supplierController.getSupplierPerformance);
 
 // Update supplier
 router.put("/:id", supplierController.updateSupplier);
