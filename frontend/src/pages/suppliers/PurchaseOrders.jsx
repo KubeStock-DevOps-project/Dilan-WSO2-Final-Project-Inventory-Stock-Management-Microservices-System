@@ -83,7 +83,7 @@ const PurchaseOrders = () => {
       order_date: new Date().toISOString().split("T")[0],
       expected_delivery_date: "",
       total_amount: "",
-      status: "draft",
+      status: "pending",
       notes: "",
     });
     setEditingPO(null);
@@ -448,23 +448,6 @@ const PurchaseOrders = () => {
                   value={formData.expected_delivery_date}
                   onChange={handleInputChange}
                 />
-                <div>
-                  <label className="block text-sm font-medium text-dark-700 mb-2">
-                    Status
-                  </label>
-                  <select
-                    name="status"
-                    className="w-full px-3 py-2 border border-dark-300 rounded-lg"
-                    value={formData.status}
-                    onChange={handleInputChange}
-                  >
-                    <option value="draft">Draft</option>
-                    <option value="submitted">Submitted</option>
-                    <option value="approved">Approved</option>
-                    <option value="received">Received</option>
-                    <option value="cancelled">Cancelled</option>
-                  </select>
-                </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-dark-700 mb-2">
                     Notes

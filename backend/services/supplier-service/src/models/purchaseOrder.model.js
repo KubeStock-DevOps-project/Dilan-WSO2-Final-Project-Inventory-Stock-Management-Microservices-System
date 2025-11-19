@@ -19,8 +19,8 @@ class PurchaseOrder {
       .toUpperCase()}`;
 
     const query = `
-      INSERT INTO purchase_orders (po_number, supplier_id, total_amount, order_date, expected_delivery_date, status, notes)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO purchase_orders (po_number, supplier_id, total_amount, order_date, expected_delivery_date, status, notes, supplier_response)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending')
       RETURNING *
     `;
 
