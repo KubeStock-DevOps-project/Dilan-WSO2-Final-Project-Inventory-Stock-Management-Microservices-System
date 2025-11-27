@@ -1,6 +1,7 @@
 # Documentation and scripts
 docs/
 scripts/
+**/scripts/
 
 # Node modules
 node_modules/
