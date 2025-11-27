@@ -138,14 +138,16 @@ class SupplierController {
       });
     } catch (error) {
       logger.error(`Delete supplier ${req.params.id} error:`, error);
-      
+
       // Check if error is due to foreign key constraint
-      if (error.code === '23503') {
+      if (error.code === "23503") {
         // PostgreSQL foreign key violation error code
         return res.status(409).json({
           success: false,
-          message: "Cannot delete supplier with existing purchase orders or related records",
-          error: "Please delete or reassign all related records before deleting this supplier",
+          message:
+            "Cannot delete supplier with existing purchase orders or related records",
+          error:
+            "Please delete or reassign all related records before deleting this supplier",
         });
       }
 

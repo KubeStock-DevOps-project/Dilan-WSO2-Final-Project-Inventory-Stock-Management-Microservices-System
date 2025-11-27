@@ -96,19 +96,18 @@ const SupplierList = () => {
         fetchSuppliers();
       } catch (error) {
         console.error("Error deleting supplier:", error);
-        
+
         // Handle different error responses
         if (error.response?.status === 409) {
           toast.error(
-            error.response?.data?.message || 
-            "Cannot delete supplier with existing purchase orders"
+            error.response?.data?.message ||
+              "Cannot delete supplier with existing purchase orders"
           );
         } else if (error.response?.status === 404) {
           toast.error("Supplier not found");
         } else {
           toast.error(
-            error.response?.data?.message || 
-            "Failed to delete supplier"
+            error.response?.data?.message || "Failed to delete supplier"
           );
         }
       }
