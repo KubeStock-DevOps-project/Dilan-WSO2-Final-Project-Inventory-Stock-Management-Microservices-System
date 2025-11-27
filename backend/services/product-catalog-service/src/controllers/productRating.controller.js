@@ -1,5 +1,6 @@
 const db = require("../config/database");
 const logger = require("../config/logger");
+const { getSupplierIdFromUser } = require("../utils/supplierLookup");
 
 class ProductRatingController {
   // Add or update product rating
@@ -8,7 +9,9 @@ class ProductRatingController {
     try {
       const { productId } = req.params;
       const { rating, review } = req.body;
-      const supplierId = req.user.id; // From auth middleware
+      
+      // Get supplier ID from authenticated user (supports Asgardeo and legacy auth)
+      const supplierId = await getSupplierIdFromUser(req.user);
 
       if (!rating || rating < 1 || rating > 5) {
         return res.status(400).json({
@@ -108,7 +111,8 @@ class ProductRatingController {
   // Get supplier's ratings
   async getMyRatings(req, res) {
     try {
-      const supplierId = req.user.id;
+      // Get supplier ID from authenticated user (supports Asgardeo and legacy auth)
+      const supplierId = await getSupplierIdFromUser(req.user);
 
       const result = await db.query(
         `SELECT pr.*, p.name as product_name, p.sku
