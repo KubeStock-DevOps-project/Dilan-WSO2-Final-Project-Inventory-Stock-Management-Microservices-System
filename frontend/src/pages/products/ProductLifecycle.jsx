@@ -6,7 +6,7 @@ import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
 import Badge from "../../components/common/Badge";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/AsgardeoAuthContext";
 
 const ProductLifecycleManagement = () => {
   const { user } = useAuth();

@@ -7,7 +7,7 @@ import Badge from "../../components/common/Badge";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import { supplierService } from "../../services/supplierService";
 import toast from "react-hot-toast";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/AsgardeoAuthContext";
 
 const PurchaseRequests = () => {
   const { user } = useAuth();

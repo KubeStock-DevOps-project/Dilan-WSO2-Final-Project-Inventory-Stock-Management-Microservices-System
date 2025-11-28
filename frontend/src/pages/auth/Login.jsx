@@ -1,18 +1,37 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AsgardeoAuthContext";
 import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
-import { LogIn } from "lucide-react";
+import { LogIn, Shield } from "lucide-react";
 
 const Login = () => {
-  const { login } = useAuth();
+  const { login, user, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    console.log("🔍 Checking auth status:", { isAuthenticated, user });
+    if (isAuthenticated && user) {
+      console.log("✅ User is authenticated, redirecting...");
+      const role = user.role;
+      if (role === "admin") {
+        navigate("/dashboard/admin");
+      } else if (role === "warehouse_staff") {
+        navigate("/dashboard/warehouse");
+      } else if (role === "supplier") {
+        navigate("/dashboard/supplier");
+      } else {
+        navigate("/products");
+      }
+    }
+  }, [isAuthenticated, user, navigate]);
 
   const handleChange = (e) => {
     setFormData({
@@ -40,19 +59,34 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("🔐 Login form submitted");
+
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
+      console.log("❌ Validation errors:", validationErrors);
       setErrors(validationErrors);
       return;
     }
 
     setLoading(true);
     try {
+      console.log("🚀 Calling login function...");
       await login(formData);
+      console.log("✅ Login function completed");
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("❌ Login error in component:", error);
+      console.error("  Error type:", typeof error);
+      console.error("  Error details:", {
+        name: error?.name,
+        message: error?.message,
+        stack: error?.stack,
+      });
+      setErrors({
+        general: error.message || "Login failed. Please try again.",
+      });
     } finally {
       setLoading(false);
+      console.log("🏁 Login process finished");
     }
   };
 

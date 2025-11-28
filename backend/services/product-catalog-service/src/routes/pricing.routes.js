@@ -2,9 +2,9 @@ const express = require("express");
 const router = express.Router();
 const PricingController = require("../controllers/pricing.controller");
 const {
-  authMiddleware,
+  authenticateAsgardeo,
   authorizeRoles,
-} = require("../middleware/auth.middleware");
+} = require("../middlewares/asgardeo.middleware");
 
 /**
  * Production-Grade Pricing Routes
@@ -25,7 +25,7 @@ const {
  */
 router.post(
   "/calculate",
-  authMiddleware,
+  authenticateAsgardeo,
   authorizeRoles("admin", "warehouse_staff"),
   PricingController.calculatePrice
 );
@@ -38,7 +38,7 @@ router.post(
  */
 router.post(
   "/calculate-bundle",
-  authMiddleware,
+  authenticateAsgardeo,
   authorizeRoles("admin", "warehouse_staff"),
   PricingController.calculateBundlePrice
 );
@@ -51,7 +51,7 @@ router.post(
  */
 router.post(
   "/compare",
-  authMiddleware,
+  authenticateAsgardeo,
   authorizeRoles("admin", "warehouse_staff"),
   PricingController.compareCompetitors
 );
@@ -68,7 +68,7 @@ router.post(
  */
 router.get(
   "/rules",
-  authMiddleware,
+  authenticateAsgardeo,
   authorizeRoles("admin", "warehouse_staff"),
   PricingController.getAllPricingRules
 );
@@ -81,7 +81,7 @@ router.get(
  */
 router.post(
   "/rules",
-  authMiddleware,
+  authenticateAsgardeo,
   authorizeRoles("admin"),
   PricingController.createPricingRule
 );
@@ -94,7 +94,7 @@ router.post(
  */
 router.put(
   "/rules/:id",
-  authMiddleware,
+  authenticateAsgardeo,
   authorizeRoles("admin"),
   PricingController.updatePricingRule
 );
@@ -111,7 +111,7 @@ router.put(
  */
 router.get(
   "/history/:productId",
-  authMiddleware,
+  authenticateAsgardeo,
   authorizeRoles("admin", "warehouse_staff"),
   PricingController.getPriceHistory
 );

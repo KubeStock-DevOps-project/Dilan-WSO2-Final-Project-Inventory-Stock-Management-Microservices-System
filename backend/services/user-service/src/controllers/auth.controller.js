@@ -132,7 +132,19 @@ class AuthController {
 
   async getProfile(req, res) {
     try {
-      const user = await User.findById(req.user.id);
+      // Try email-based lookup first (for Asgardeo users)
+      const userEmail = req.user.email || req.user.username;
+      const userId = req.user.id;
+
+      let user = null;
+      if (userEmail) {
+        user = await User.findByEmail(userEmail);
+      }
+
+      // Fallback to user_id lookup (for legacy users)
+      if (!user && userId) {
+        user = await User.findById(userId);
+      }
 
       if (!user) {
         return res.status(404).json({
@@ -166,7 +178,29 @@ class AuthController {
   async updateProfile(req, res) {
     try {
       const { full_name, username } = req.body;
-      const userId = req.user.id;
+
+      // Get user ID using email-first lookup
+      const userEmail = req.user.email || req.user.username;
+      let userId = req.user.id;
+
+      // Find the actual user record to get the database ID
+      let user = null;
+      if (userEmail) {
+        user = await User.findByEmail(userEmail);
+      }
+      if (!user && userId) {
+        user = await User.findById(userId);
+      }
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "User not found",
+        });
+      }
+
+      // Use the database ID for update
+      userId = user.id;
 
       const updateData = {};
       if (full_name) updateData.full_name = full_name;
@@ -207,15 +241,28 @@ class AuthController {
   async changePassword(req, res) {
     try {
       const { current_password, new_password } = req.body;
-      const userId = req.user.id;
 
-      const user = await User.findById(userId);
+      // Get user using email-first lookup
+      const userEmail = req.user.email || req.user.username;
+      let userId = req.user.id;
+
+      let user = null;
+      if (userEmail) {
+        user = await User.findByEmail(userEmail);
+      }
+      if (!user && userId) {
+        user = await User.findById(userId);
+      }
+
       if (!user) {
         return res.status(404).json({
           success: false,
           message: "User not found",
         });
       }
+
+      // Use the database ID
+      userId = user.id;
 
       // Verify current password
       const isPasswordValid = await bcrypt.compare(

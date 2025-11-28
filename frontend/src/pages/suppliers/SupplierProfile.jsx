@@ -25,18 +25,16 @@ const SupplierProfile = () => {
     try {
       setLoading(true);
 
-      // Check if token exists
-      const token = localStorage.getItem("token");
+      // Check if token exists (Asgardeo or legacy JWT)
+      const asgardeoToken = localStorage.getItem("asgardeo_token");
+      const jwtToken = localStorage.getItem("token");
+      const token = asgardeoToken || jwtToken;
+
       if (!token) {
-        console.error("No authentication token found");
+        console.error("❌ No authentication token found");
         toast.error("Please login to view your profile");
         return;
       }
-
-      console.log(
-        "Fetching profile with token:",
-        token ? "Token exists" : "No token"
-      );
 
       const response = await fetch(
         "http://localhost:3004/api/suppliers/profile/me",
@@ -47,9 +45,6 @@ const SupplierProfile = () => {
           },
         }
       );
-
-      console.log("Response status:", response.status);
-      console.log("Response ok:", response.ok);
 
       // Handle specific error codes
       if (response.status === 401) {
@@ -90,10 +85,8 @@ const SupplierProfile = () => {
       }
 
       const data = await response.json();
-      console.log("Profile data received:", data);
 
       if (!data.success || !data.data) {
-        console.error("Invalid response format:", data);
         throw new Error("Invalid response format from server");
       }
 
@@ -117,13 +110,15 @@ const SupplierProfile = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem("token");
+      // Check if token exists (Asgardeo or legacy JWT)
+      const asgardeoToken = localStorage.getItem("asgardeo_token");
+      const jwtToken = localStorage.getItem("token");
+      const token = asgardeoToken || jwtToken;
+
       if (!token) {
         toast.error("Please login to update your profile");
         return;
       }
-
-      console.log("Updating profile with data:", formData);
 
       const response = await fetch(
         "http://localhost:3004/api/suppliers/profile/me",
@@ -136,8 +131,6 @@ const SupplierProfile = () => {
           body: JSON.stringify(formData),
         }
       );
-
-      console.log("Update response status:", response.status);
 
       // Handle specific error codes
       if (response.status === 401) {

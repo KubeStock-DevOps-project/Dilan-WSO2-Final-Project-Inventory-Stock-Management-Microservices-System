@@ -1,71 +1,18 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/AsgardeoAuthContext";
 import Button from "../../components/common/Button";
-import Input from "../../components/common/Input";
-import { UserPlus } from "lucide-react";
+import { UserPlus, Shield } from "lucide-react";
 
 const Register = () => {
-  const { register } = useAuth();
-  const [formData, setFormData] = useState({
-    username: "",
-    email: "",
-    full_name: "",
-    password: "",
-    confirmPassword: "",
-    role: "warehouse_staff",
-  });
+  const { login } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState({});
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-    // Clear error for this field
-    if (errors[e.target.name]) {
-      setErrors({ ...errors, [e.target.name]: "" });
-    }
-  };
-
-  const validate = () => {
-    const newErrors = {};
-    if (!formData.username) {
-      newErrors.username = "Username is required";
-    }
-    if (!formData.full_name) {
-      newErrors.full_name = "Full name is required";
-    }
-    if (!formData.email) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Email is invalid";
-    }
-    if (!formData.password) {
-      newErrors.password = "Password is required";
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
-    }
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match";
-    }
-    return newErrors;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const validationErrors = validate();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-
+  const handleAsgardeoSignup = async () => {
     setLoading(true);
     try {
-      // eslint-disable-next-line no-unused-vars
-      const { confirmPassword, ...registerData } = formData;
-      await register(registerData);
+      // Redirect to Asgardeo login/signup page
+      await login();
     } catch (error) {
       console.error("Registration error:", error);
     } finally {
@@ -76,103 +23,54 @@ const Register = () => {
   return (
     <div>
       <div className="text-center mb-8">
+        <div className="flex justify-center mb-4">
+          <div className="p-3 bg-primary-100 rounded-full">
+            <Shield className="w-8 h-8 text-primary-600" />
+          </div>
+        </div>
         <h2 className="text-2xl font-bold text-dark-900">Create Account</h2>
-        <p className="text-dark-600 mt-2">Sign up to get started</p>
+        <p className="text-dark-600 mt-2">
+          Secure authentication with Asgardeo
+        </p>
       </div>
 
-      <form onSubmit={handleSubmit}>
-        <Input
-          label="Username"
-          type="text"
-          name="username"
-          value={formData.username}
-          onChange={handleChange}
-          error={errors.username}
-          placeholder="Enter your username"
-          required
-        />
+      <div className="bg-white p-8 rounded-xl shadow-sm border border-dark-200">
+        <div className="space-y-6">
+          <div className="text-center p-6 bg-primary-50 rounded-lg">
+            <h3 className="text-lg font-semibold text-dark-900 mb-2">
+              Sign Up with Asgardeo
+            </h3>
+            <p className="text-dark-600 mb-4">
+              This application uses WSO2 Asgardeo for secure authentication.
+              Click below to create your account through Asgardeo.
+            </p>
+            <Button
+              onClick={handleAsgardeoSignup}
+              variant="primary"
+              className="w-full flex items-center justify-center gap-2"
+              loading={loading}
+            >
+              <Shield className="w-5 h-5" />
+              {loading ? "Redirecting..." : "Sign Up with Asgardeo"}
+            </Button>
+          </div>
 
-        <Input
-          label="Full Name"
-          type="text"
-          name="full_name"
-          value={formData.full_name}
-          onChange={handleChange}
-          error={errors.full_name}
-          placeholder="Enter your full name"
-          required
-        />
-
-        <Input
-          label="Email Address"
-          type="email"
-          name="email"
-          value={formData.email}
-          onChange={handleChange}
-          error={errors.email}
-          placeholder="Enter your email"
-          required
-        />
-
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-dark-700 mb-2">
-            Role <span className="text-red-500">*</span>
-          </label>
-          <select
-            name="role"
-            value={formData.role}
-            onChange={handleChange}
-            className="w-full px-4 py-2 border border-dark-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition-all"
-          >
-            <option value="warehouse_staff">Warehouse Staff</option>
-            <option value="supplier">Supplier</option>
-            <option value="admin">Admin</option>
-          </select>
+          <div className="text-center">
+            <p className="text-dark-600">
+              Already have an account?{" "}
+              <Link
+                to="/login"
+                className="text-primary-600 hover:text-primary-700 font-medium"
+              >
+                Sign In
+              </Link>
+            </p>
+          </div>
         </div>
+      </div>
 
-        <Input
-          label="Password"
-          type="password"
-          name="password"
-          value={formData.password}
-          onChange={handleChange}
-          error={errors.password}
-          placeholder="Enter your password"
-          required
-        />
-
-        <Input
-          label="Confirm Password"
-          type="password"
-          name="confirmPassword"
-          value={formData.confirmPassword}
-          onChange={handleChange}
-          error={errors.confirmPassword}
-          placeholder="Confirm your password"
-          required
-        />
-
-        <Button
-          type="submit"
-          variant="primary"
-          className="w-full"
-          loading={loading}
-        >
-          <UserPlus size={18} className="mr-2" />
-          Create Account
-        </Button>
-      </form>
-
-      <div className="mt-6 text-center">
-        <p className="text-sm text-dark-600">
-          Already have an account?{" "}
-          <Link
-            to="/login"
-            className="text-primary hover:text-primary-700 font-medium"
-          >
-            Sign in
-          </Link>
-        </p>
+      <div className="mt-6 text-center text-sm text-dark-500">
+        <p>© 2025 Inventory Management System. All rights reserved.</p>
       </div>
     </div>
   );

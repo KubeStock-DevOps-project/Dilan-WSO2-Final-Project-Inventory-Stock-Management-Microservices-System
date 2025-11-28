@@ -1,7 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const supplierController = require("../controllers/supplier.controller");
-const authMiddleware = require("../middleware/auth.middleware");
+const {
+  authenticateAsgardeo,
+  authorizeRoles,
+} = require("../middlewares/asgardeo.middleware");
 
 // Create a new supplier
 router.post("/", supplierController.createSupplier);
@@ -12,10 +15,18 @@ router.get("/", supplierController.getAllSuppliers);
 // IMPORTANT: Specific routes must come BEFORE parameterized routes like /:id
 
 // Get current supplier's profile (for supplier users) - protected route
-router.get("/profile/me", authMiddleware, supplierController.getMyProfile);
+router.get(
+  "/profile/me",
+  authenticateAsgardeo,
+  supplierController.getMyProfile
+);
 
 // Update supplier profile (for supplier users) - protected route
-router.put("/profile/me", authMiddleware, supplierController.updateMyProfile);
+router.put(
+  "/profile/me",
+  authenticateAsgardeo,
+  supplierController.updateMyProfile
+);
 
 // Get supplier by ID
 router.get("/:id", supplierController.getSupplierById);

@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const authController = require("../controllers/auth.controller");
-const { authenticateToken } = require("../middlewares/auth.middleware");
+const { authenticateAsgardeo } = require("../middlewares/asgardeo.middleware");
 const {
   validateRegister,
   validateLogin,
@@ -14,16 +14,16 @@ router.post("/register", validateRegister, authController.register);
 router.post("/login", validateLogin, authController.login);
 
 // Protected routes
-router.get("/profile", authenticateToken, authController.getProfile);
+router.get("/profile", authenticateAsgardeo, authController.getProfile);
 router.put(
   "/profile",
-  authenticateToken,
+  authenticateAsgardeo,
   validateUpdateProfile,
   authController.updateProfile
 );
 router.put(
   "/change-password",
-  authenticateToken,
+  authenticateAsgardeo,
   validateChangePassword,
   authController.changePassword
 );

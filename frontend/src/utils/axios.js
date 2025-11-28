@@ -13,7 +13,11 @@ const api = axios.create({
 // Request interceptor for adding auth token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
+    // Try to get Asgardeo token first, fallback to old JWT token
+    const asgardeoToken = localStorage.getItem("asgardeo_token");
+    const jwtToken = localStorage.getItem("token");
+    const token = asgardeoToken || jwtToken;
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -31,8 +35,13 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       // Token expired or invalid
       localStorage.removeItem("token");
+      localStorage.removeItem("asgardeo_token");
       localStorage.removeItem("user");
-      window.location.href = "/login";
+
+      // Don't redirect if already on login page
+      if (!window.location.pathname.includes("/login")) {
+        window.location.href = "/login";
+      }
     }
     return Promise.reject(error);
   }

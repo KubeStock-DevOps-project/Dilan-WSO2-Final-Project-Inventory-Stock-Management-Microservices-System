@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const purchaseOrderController = require("../controllers/purchaseOrder.controller");
-const authMiddleware = require("../middleware/auth.middleware");
+const { authenticateAsgardeo } = require("../middlewares/asgardeo.middleware");
 // const { purchaseOrderValidation } = require("../middlewares/validation.middleware");
 
 // Create a new purchase order
@@ -31,21 +31,21 @@ router.patch("/:id/status", purchaseOrderController.updatePurchaseOrderStatus);
 // NEW: Supplier responds to purchase request (approve/reject)
 router.patch(
   "/:id/respond",
-  authMiddleware,
+  authenticateAsgardeo,
   purchaseOrderController.respondToPurchaseRequest
 );
 
 // NEW: Supplier updates shipment status
 router.patch(
   "/:id/ship",
-  authMiddleware,
+  authenticateAsgardeo,
   purchaseOrderController.updateShipmentStatus
 );
 
 // NEW: Warehouse confirms receipt
 router.patch(
   "/:id/receive",
-  authMiddleware,
+  authenticateAsgardeo,
   purchaseOrderController.confirmReceipt
 );
 

@@ -2,16 +2,16 @@ const express = require("express");
 const router = express.Router();
 const userController = require("../controllers/user.controller");
 const {
-  authenticateToken,
+  authenticateAsgardeo,
   authorizeRoles,
-} = require("../middlewares/auth.middleware");
+} = require("../middlewares/asgardeo.middleware");
 const {
   validateCreateUser,
   validateUpdateUser,
 } = require("../middlewares/validation.middleware");
 
 // All routes require authentication and admin role
-router.use(authenticateToken);
+router.use(authenticateAsgardeo);
 router.use(authorizeRoles("admin"));
 
 router.get("/", userController.getAllUsers);

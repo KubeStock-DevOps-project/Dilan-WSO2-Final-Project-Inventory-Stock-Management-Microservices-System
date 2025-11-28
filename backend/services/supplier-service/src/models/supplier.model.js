@@ -102,6 +102,18 @@ class Supplier {
     }
   }
 
+  static async findByEmail(email) {
+    const query = "SELECT * FROM suppliers WHERE email = $1";
+
+    try {
+      const result = await db.query(query, [email]);
+      return result.rows[0];
+    } catch (error) {
+      logger.error(`Error fetching supplier for email ${email}:`, error);
+      throw error;
+    }
+  }
+
   static async update(id, updates) {
     const allowedFields = [
       "name",

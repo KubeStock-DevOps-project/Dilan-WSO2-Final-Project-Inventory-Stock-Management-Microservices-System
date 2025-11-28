@@ -8,7 +8,7 @@ import Badge from "../../components/common/Badge";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import { productService } from "../../services/productService";
 import { formatCurrency } from "../../utils/helpers";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/AsgardeoAuthContext";
 
 const ProductList = () => {
   const { user } = useAuth();

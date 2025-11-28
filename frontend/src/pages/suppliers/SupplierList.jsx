@@ -92,10 +92,24 @@ const SupplierList = () => {
     if (window.confirm("Are you sure you want to delete this supplier?")) {
       try {
         await supplierService.deleteSupplier(id);
+        toast.success("Supplier deleted successfully");
         fetchSuppliers();
       } catch (error) {
         console.error("Error deleting supplier:", error);
-        toast.error("Failed to delete supplier");
+
+        // Handle different error responses
+        if (error.response?.status === 409) {
+          toast.error(
+            error.response?.data?.message ||
+              "Cannot delete supplier with existing purchase orders"
+          );
+        } else if (error.response?.status === 404) {
+          toast.error("Supplier not found");
+        } else {
+          toast.error(
+            error.response?.data?.message || "Failed to delete supplier"
+          );
+        }
       }
     }
   };

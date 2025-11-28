@@ -138,6 +138,19 @@ class SupplierController {
       });
     } catch (error) {
       logger.error(`Delete supplier ${req.params.id} error:`, error);
+
+      // Check if error is due to foreign key constraint
+      if (error.code === "23503") {
+        // PostgreSQL foreign key violation error code
+        return res.status(409).json({
+          success: false,
+          message:
+            "Cannot delete supplier with existing purchase orders or related records",
+          error:
+            "Please delete or reassign all related records before deleting this supplier",
+        });
+      }
+
       res.status(500).json({
         success: false,
         message: "Error deleting supplier",
@@ -197,9 +210,21 @@ class SupplierController {
   // Get current supplier's profile (for supplier role)
   async getMyProfile(req, res) {
     try {
-      const userId = req.user.id; // From auth middleware
+      // For Asgardeo users, use email; for legacy users, use user_id
+      const userEmail = req.user.email || req.user.username;
+      const userId = req.user.id;
 
-      const supplier = await Supplier.findByUserId(userId);
+      let supplier;
+
+      // Try finding by email first (for Asgardeo users)
+      if (userEmail) {
+        supplier = await Supplier.findByEmail(userEmail);
+      }
+
+      // Fallback to user_id if email lookup failed (for legacy users)
+      if (!supplier && userId) {
+        supplier = await Supplier.findByUserId(userId);
+      }
 
       if (!supplier) {
         return res.status(404).json({
@@ -225,11 +250,22 @@ class SupplierController {
   // Update supplier profile (for supplier role)
   async updateMyProfile(req, res) {
     try {
-      const userId = req.user.id; // From auth middleware
+      // For Asgardeo users, use email; for legacy users, use user_id
+      const userEmail = req.user.email || req.user.username;
+      const userId = req.user.id;
       const allowedFields = ["contact_person", "email", "phone", "address"];
 
-      // First find the supplier by user_id
-      const supplier = await Supplier.findByUserId(userId);
+      let supplier;
+
+      // Try finding by email first (for Asgardeo users)
+      if (userEmail) {
+        supplier = await Supplier.findByEmail(userEmail);
+      }
+
+      // Fallback to user_id if email lookup failed (for legacy users)
+      if (!supplier && userId) {
+        supplier = await Supplier.findByUserId(userId);
+      }
 
       if (!supplier) {
         return res.status(404).json({
