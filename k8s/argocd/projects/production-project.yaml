@@ -1,0 +1,93 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: production
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: Production environment for inventory system
+  
+  # Source repositories
+  sourceRepos:
+  - 'https://github.com/IT21182914/WSO2-Final-Project-Inventory-Stock-Management-Microservices-System.git'
+  
+  # Destination clusters and namespaces
+  destinations:
+  - namespace: 'inventory-system'
+    server: https://kubernetes.default.svc
+  - namespace: 'kong-gateway'
+    server: https://kubernetes.default.svc
+  - namespace: 'production-*'
+    server: https://kubernetes.default.svc
+  
+  # Cluster resource allow list
+  clusterResourceWhitelist:
+  - group: ''
+    kind: Namespace
+  - group: ''
+    kind: ResourceQuota
+  
+  # Namespace resource allow list  
+  namespaceResourceWhitelist:
+  - group: 'apps'
+    kind: Deployment
+  - group: 'apps'
+    kind: StatefulSet
+  - group: ''
+    kind: Service
+  - group: ''
+    kind: ConfigMap
+  - group: ''
+    kind: Secret
+  - group: ''
+    kind: ServiceAccount
+  - group: 'networking.k8s.io'
+    kind: Ingress
+  - group: 'networking.k8s.io'
+    kind: NetworkPolicy
+  - group: 'autoscaling'
+    kind: HorizontalPodAutoscaler
+  - group: 'policy'
+    kind: PodDisruptionBudget
+  
+  # Sync windows - restrictive for production
+  syncWindows:
+  - kind: deny
+    schedule: '0 22 * * *'  # No deployments between 10 PM - 6 AM
+    duration: 8h
+    applications:
+    - '*'
+  - kind: allow
+    schedule: '0 6 * * 1-5'  # Allow Monday-Friday 6 AM - 10 PM
+    duration: 16h
+    applications:
+    - '*'
+  
+  # Orphaned resources (don't delete automatically)
+  orphanedResources:
+    warn: true
+  
+  # Roles
+  roles:
+  - name: production-admin
+    description: Admin access to production project
+    policies:
+    - p, proj:production:production-admin, applications, *, production/*, allow
+    groups:
+    - admin
+  
+  - name: production-deployer
+    description: Deployment access to production project
+    policies:
+    - p, proj:production:production-deployer, applications, sync, production/*, allow
+    - p, proj:production:production-deployer, applications, get, production/*, allow
+    groups:
+    - developer
+  
+  - name: production-readonly
+    description: Read-only access to production project
+    policies:
+    - p, proj:production:production-readonly, applications, get, production/*, allow
+    groups:
+    - viewer

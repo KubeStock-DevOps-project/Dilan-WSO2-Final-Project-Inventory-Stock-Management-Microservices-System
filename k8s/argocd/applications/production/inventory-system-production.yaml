@@ -1,0 +1,51 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: inventory-system-production
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: production
+  
+  source:
+    repoURL: https://github.com/IT21182914/WSO2-Final-Project-Inventory-Stock-Management-Microservices-System.git
+    targetRevision: main
+    path: k8s/base/services
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: inventory-system
+  
+  syncPolicy:
+    # Manual sync for production - requires approval
+    automated:
+      prune: false
+      selfHeal: false
+    syncOptions:
+    - CreateNamespace=true
+    - PrunePropagationPolicy=foreground
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 5m
+  
+  revisionHistoryLimit: 20
+  
+  # Health assessment
+  ignoreDifferences:
+  - group: apps
+    kind: Deployment
+    jsonPointers:
+    - /spec/replicas
+  
+  # Notification annotations
+  annotations:
+    notifications.argoproj.io/subscribe.on-deployed.slack: production-alerts
+    notifications.argoproj.io/subscribe.on-deployed.email: team@company.com
+    notifications.argoproj.io/subscribe.on-sync-failed.slack: production-alerts
+    notifications.argoproj.io/subscribe.on-sync-failed.email: team@company.com
+    notifications.argoproj.io/subscribe.on-health-degraded.slack: production-alerts
+    notifications.argoproj.io/subscribe.on-health-degraded.email: team@company.com

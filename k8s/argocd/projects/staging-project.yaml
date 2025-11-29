@@ -1,0 +1,84 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: staging
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: Staging environment for inventory system
+  
+  # Source repositories
+  sourceRepos:
+  - 'https://github.com/IT21182914/WSO2-Final-Project-Inventory-Stock-Management-Microservices-System.git'
+  - '*'  # Allow all repos (restrict in production)
+  
+  # Destination clusters and namespaces
+  destinations:
+  - namespace: 'inventory-system'
+    server: https://kubernetes.default.svc
+  - namespace: 'kong-gateway'
+    server: https://kubernetes.default.svc
+  - namespace: 'staging-*'
+    server: https://kubernetes.default.svc
+  
+  # Cluster resource allow list
+  clusterResourceWhitelist:
+  - group: ''
+    kind: Namespace
+  - group: ''
+    kind: ResourceQuota
+  - group: 'rbac.authorization.k8s.io'
+    kind: ClusterRole
+  - group: 'rbac.authorization.k8s.io'
+    kind: ClusterRoleBinding
+  
+  # Namespace resource allow list
+  namespaceResourceWhitelist:
+  - group: 'apps'
+    kind: Deployment
+  - group: 'apps'
+    kind: StatefulSet
+  - group: 'apps'
+    kind: DaemonSet
+  - group: ''
+    kind: Service
+  - group: ''
+    kind: ConfigMap
+  - group: ''
+    kind: Secret
+  - group: ''
+    kind: ServiceAccount
+  - group: 'networking.k8s.io'
+    kind: Ingress
+  - group: 'networking.k8s.io'
+    kind: NetworkPolicy
+  - group: 'autoscaling'
+    kind: HorizontalPodAutoscaler
+  - group: 'policy'
+    kind: PodDisruptionBudget
+  
+  # Sync windows
+  syncWindows:
+  - kind: allow
+    schedule: '* * * * *'
+    duration: 24h
+    applications:
+    - '*'
+  
+  # Roles
+  roles:
+  - name: staging-admin
+    description: Admin access to staging project
+    policies:
+    - p, proj:staging:staging-admin, applications, *, staging/*, allow
+    groups:
+    - admin
+    - developer
+  
+  - name: staging-readonly
+    description: Read-only access to staging project
+    policies:
+    - p, proj:staging:staging-readonly, applications, get, staging/*, allow
+    groups:
+    - viewer

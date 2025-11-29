@@ -1,0 +1,20 @@
+# ============================================================================
+# ArgoCD Installation Manifest
+# ============================================================================
+# This installs ArgoCD v2.9+ for GitOps continuous delivery
+# Source: https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+# ============================================================================
+
+# NOTE: Use the official installation command:
+# kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+# Or download and apply locally:
+# curl -sSL -o argocd-install.yaml https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+# kubectl apply -n argocd -f argocd-install.yaml
+
+# For this deployment, we'll use a custom configuration with:
+# - Ingress enabled
+# - RBAC configured
+# - HA mode (3 replicas for production)
+
+# Apply the base installation first, then our custom configs
