@@ -9,10 +9,10 @@ resource "aws_lb" "k8s_api" {
   internal           = false
   load_balancer_type = "network"
   subnets            = var.subnet_ids
-  
-  enable_deletion_protection = false
+
+  enable_deletion_protection       = false
   enable_cross_zone_load_balancing = true
-  
+
   tags = {
     Name        = "${var.environment}-k8s-api-nlb"
     Environment = var.environment
@@ -26,7 +26,7 @@ resource "aws_lb_target_group" "k8s_api" {
   port     = 6443
   protocol = "TCP"
   vpc_id   = var.vpc_id
-  
+
   health_check {
     enabled             = true
     protocol            = "HTTPS"
@@ -37,7 +37,7 @@ resource "aws_lb_target_group" "k8s_api" {
     timeout             = 5
     interval            = 10
   }
-  
+
   tags = {
     Name        = "${var.environment}-k8s-api-tg"
     Environment = var.environment
@@ -49,7 +49,7 @@ resource "aws_lb_listener" "k8s_api" {
   load_balancer_arn = aws_lb.k8s_api.arn
   port              = "6443"
   protocol          = "TCP"
-  
+
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.k8s_api.arn
@@ -75,10 +75,10 @@ resource "aws_lb" "apps" {
   load_balancer_type = "application"
   security_groups    = [var.security_group_id]
   subnets            = var.subnet_ids
-  
+
   enable_deletion_protection = false
   enable_http2               = true
-  
+
   tags = {
     Name        = "${var.environment}-k8s-apps-alb"
     Environment = var.environment
@@ -92,7 +92,7 @@ resource "aws_lb_target_group" "http" {
   port     = 80
   protocol = "HTTP"
   vpc_id   = var.vpc_id
-  
+
   health_check {
     enabled             = true
     path                = "/healthz"
@@ -103,7 +103,7 @@ resource "aws_lb_target_group" "http" {
     interval            = 10
     matcher             = "200-399"
   }
-  
+
   tags = {
     Name        = "${var.environment}-k8s-http-tg"
     Environment = var.environment
@@ -115,7 +115,7 @@ resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.apps.arn
   port              = "80"
   protocol          = "HTTP"
-  
+
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.http.arn

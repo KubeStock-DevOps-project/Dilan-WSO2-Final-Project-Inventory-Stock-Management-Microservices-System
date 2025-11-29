@@ -11,7 +11,7 @@ NODE_ROLE="${node_role}"
 NODE_INDEX="${node_index}"
 
 echo "============================================"
-echo "Initializing K8s ${NODE_ROLE} Node #${NODE_INDEX}"
+echo "Initializing K8s $NODE_ROLE Node #$NODE_INDEX"
 echo "============================================"
 
 # Update system
@@ -34,7 +34,7 @@ apt-get install -y \
     git
 
 # Configure hostname
-hostnamectl set-hostname "k8s-${NODE_ROLE}-${NODE_INDEX}"
+hostnamectl set-hostname "k8s-$NODE_ROLE-$NODE_INDEX"
 
 # Disable swap (required for Kubernetes)
 swapoff -a

@@ -11,7 +11,7 @@ variable "environment" {
   description = "Environment name (staging, production)"
   type        = string
   default     = "staging"
-  
+
   validation {
     condition     = contains(["staging", "production", "dev"], var.environment)
     error_message = "Environment must be staging, production, or dev."
@@ -116,7 +116,7 @@ variable "master_node_count" {
   description = "Number of master nodes (1 or 3 for HA)"
   type        = number
   default     = 1
-  
+
   validation {
     condition     = contains([1, 3], var.master_node_count)
     error_message = "Master node count must be 1 or 3 for HA."
@@ -137,7 +137,7 @@ variable "worker_node_count" {
   description = "Number of worker nodes"
   type        = number
   default     = 2
-  
+
   validation {
     condition     = var.worker_node_count >= 1 && var.worker_node_count <= 10
     error_message = "Worker node count must be between 1 and 10."
@@ -182,7 +182,7 @@ variable "persistent_volume_type" {
   description = "EBS volume type for persistent storage"
   type        = string
   default     = "gp3"
-  
+
   validation {
     condition     = contains(["gp2", "gp3", "io1", "io2"], var.persistent_volume_type)
     error_message = "Volume type must be gp2, gp3, io1, or io2."
@@ -197,7 +197,7 @@ variable "k8s_distribution" {
   description = "Kubernetes distribution to install (k3s, kubeadm, rke2)"
   type        = string
   default     = "k3s"
-  
+
   validation {
     condition     = contains(["k3s", "kubeadm", "rke2"], var.k8s_distribution)
     error_message = "K8s distribution must be k3s, kubeadm, or rke2."

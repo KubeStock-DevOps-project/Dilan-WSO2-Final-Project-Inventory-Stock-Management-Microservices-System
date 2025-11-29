@@ -11,7 +11,7 @@ resource "aws_security_group" "k8s_master" {
   name_prefix = "${var.environment}-k8s-master-"
   description = "Security group for Kubernetes master nodes"
   vpc_id      = var.vpc_id
-  
+
   # SSH access
   ingress {
     description = "SSH from allowed IPs"
@@ -20,7 +20,7 @@ resource "aws_security_group" "k8s_master" {
     protocol    = "tcp"
     cidr_blocks = var.allowed_ssh_cidr_blocks
   }
-  
+
   # Kubernetes API server
   ingress {
     description = "K8s API server"
@@ -29,7 +29,7 @@ resource "aws_security_group" "k8s_master" {
     protocol    = "tcp"
     cidr_blocks = var.allowed_k8s_api_cidr_blocks
   }
-  
+
   # etcd server client API
   ingress {
     description = "etcd server client API"
@@ -38,7 +38,7 @@ resource "aws_security_group" "k8s_master" {
     protocol    = "tcp"
     self        = true
   }
-  
+
   # Kubelet API
   ingress {
     description = "Kubelet API"
@@ -47,7 +47,7 @@ resource "aws_security_group" "k8s_master" {
     protocol    = "tcp"
     self        = true
   }
-  
+
   # kube-scheduler
   ingress {
     description = "kube-scheduler"
@@ -56,7 +56,7 @@ resource "aws_security_group" "k8s_master" {
     protocol    = "tcp"
     self        = true
   }
-  
+
   # kube-controller-manager
   ingress {
     description = "kube-controller-manager"
@@ -65,16 +65,7 @@ resource "aws_security_group" "k8s_master" {
     protocol    = "tcp"
     self        = true
   }
-  
-  # Allow all traffic from worker nodes
-  ingress {
-    description     = "All traffic from workers"
-    from_port       = 0
-    to_port         = 65535
-    protocol        = "tcp"
-    security_groups = [aws_security_group.k8s_worker.id]
-  }
-  
+
   # Allow all traffic between master nodes
   ingress {
     description = "All traffic between masters"
@@ -83,7 +74,7 @@ resource "aws_security_group" "k8s_master" {
     protocol    = "tcp"
     self        = true
   }
-  
+
   # Allow all outbound traffic
   egress {
     description = "Allow all outbound"
@@ -92,13 +83,13 @@ resource "aws_security_group" "k8s_master" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  
+
   tags = {
     Name        = "${var.environment}-k8s-master-sg"
     Environment = var.environment
     Role        = "master"
   }
-  
+
   lifecycle {
     create_before_destroy = true
   }
@@ -112,7 +103,7 @@ resource "aws_security_group" "k8s_worker" {
   name_prefix = "${var.environment}-k8s-worker-"
   description = "Security group for Kubernetes worker nodes"
   vpc_id      = var.vpc_id
-  
+
   # SSH access
   ingress {
     description = "SSH from allowed IPs"
@@ -121,7 +112,7 @@ resource "aws_security_group" "k8s_worker" {
     protocol    = "tcp"
     cidr_blocks = var.allowed_ssh_cidr_blocks
   }
-  
+
   # Kubelet API
   ingress {
     description = "Kubelet API"
@@ -130,7 +121,7 @@ resource "aws_security_group" "k8s_worker" {
     protocol    = "tcp"
     self        = true
   }
-  
+
   # NodePort Services
   ingress {
     description = "NodePort Services"
@@ -139,16 +130,7 @@ resource "aws_security_group" "k8s_worker" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  
-  # Allow all traffic from master nodes
-  ingress {
-    description     = "All traffic from masters"
-    from_port       = 0
-    to_port         = 65535
-    protocol        = "tcp"
-    security_groups = [aws_security_group.k8s_master.id]
-  }
-  
+
   # Allow all traffic between worker nodes
   ingress {
     description = "All traffic between workers"
@@ -157,7 +139,7 @@ resource "aws_security_group" "k8s_worker" {
     protocol    = "tcp"
     self        = true
   }
-  
+
   # Pod network (Flannel/Calico VXLAN)
   ingress {
     description = "Pod network VXLAN"
@@ -166,7 +148,7 @@ resource "aws_security_group" "k8s_worker" {
     protocol    = "udp"
     self        = true
   }
-  
+
   # Allow all outbound traffic
   egress {
     description = "Allow all outbound"
@@ -175,16 +157,42 @@ resource "aws_security_group" "k8s_worker" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  
+
   tags = {
     Name        = "${var.environment}-k8s-worker-sg"
     Environment = var.environment
     Role        = "worker"
   }
-  
+
   lifecycle {
     create_before_destroy = true
   }
+}
+
+# ============================================================================
+# SECURITY GROUP RULES (to avoid circular dependencies)
+# ============================================================================
+
+# Master → Worker traffic
+resource "aws_security_group_rule" "master_to_worker" {
+  type                     = "ingress"
+  from_port                = 0
+  to_port                  = 65535
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.k8s_master.id
+  security_group_id        = aws_security_group.k8s_worker.id
+  description              = "All traffic from masters"
+}
+
+# Worker → Master traffic
+resource "aws_security_group_rule" "worker_to_master" {
+  type                     = "ingress"
+  from_port                = 0
+  to_port                  = 65535
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.k8s_worker.id
+  security_group_id        = aws_security_group.k8s_master.id
+  description              = "All traffic from workers"
 }
 
 # ============================================================================
@@ -195,7 +203,7 @@ resource "aws_security_group" "lb" {
   name_prefix = "${var.environment}-k8s-lb-"
   description = "Security group for Kubernetes load balancer"
   vpc_id      = var.vpc_id
-  
+
   # HTTPS access for K8s API
   ingress {
     description = "HTTPS for K8s API"
@@ -204,7 +212,7 @@ resource "aws_security_group" "lb" {
     protocol    = "tcp"
     cidr_blocks = var.allowed_k8s_api_cidr_blocks
   }
-  
+
   # HTTP for applications
   ingress {
     description = "HTTP"
@@ -213,7 +221,7 @@ resource "aws_security_group" "lb" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  
+
   # HTTPS for applications
   ingress {
     description = "HTTPS"
@@ -222,7 +230,7 @@ resource "aws_security_group" "lb" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  
+
   # Allow all outbound traffic
   egress {
     description = "Allow all outbound"
@@ -231,13 +239,13 @@ resource "aws_security_group" "lb" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  
+
   tags = {
     Name        = "${var.environment}-k8s-lb-sg"
     Environment = var.environment
     Role        = "load-balancer"
   }
-  
+
   lifecycle {
     create_before_destroy = true
   }

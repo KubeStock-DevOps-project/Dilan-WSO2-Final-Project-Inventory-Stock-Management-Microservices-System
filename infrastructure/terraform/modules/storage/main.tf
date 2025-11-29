@@ -9,7 +9,7 @@ resource "aws_ebs_volume" "persistent" {
   size              = var.persistent_volume_size
   type              = var.persistent_volume_type
   encrypted         = true
-  
+
   tags = {
     Name        = "${var.environment}-k8s-pv-${count.index + 1}"
     Environment = var.environment

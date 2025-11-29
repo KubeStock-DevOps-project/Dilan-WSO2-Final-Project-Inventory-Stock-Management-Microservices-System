@@ -8,14 +8,14 @@
 
 terraform {
   required_version = ">= 1.0"
-  
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
   }
-  
+
   # Optional: Remote backend for state management
   # backend "s3" {
   #   bucket = "your-terraform-state-bucket"
@@ -30,7 +30,7 @@ terraform {
 
 provider "aws" {
   region = var.aws_region
-  
+
   default_tags {
     tags = {
       Project     = "Inventory-Stock-Management"
@@ -47,16 +47,16 @@ provider "aws" {
 
 module "networking" {
   source = "./modules/networking"
-  
-  environment         = var.environment
-  vpc_cidr           = var.vpc_cidr
-  availability_zones = var.availability_zones
-  public_subnet_cidrs = var.public_subnet_cidrs
+
+  environment          = var.environment
+  vpc_cidr             = var.vpc_cidr
+  availability_zones   = var.availability_zones
+  public_subnet_cidrs  = var.public_subnet_cidrs
   private_subnet_cidrs = var.private_subnet_cidrs
-  
-  enable_nat_gateway = true
+
+  enable_nat_gateway   = true
   enable_dns_hostnames = true
-  enable_dns_support = true
+  enable_dns_support   = true
 }
 
 # ============================================================================
@@ -65,13 +65,13 @@ module "networking" {
 
 module "security" {
   source = "./modules/security"
-  
+
   environment = var.environment
   vpc_id      = module.networking.vpc_id
-  
+
   # Allow SSH from your IP (set in terraform.tfvars)
   allowed_ssh_cidr_blocks = var.allowed_ssh_cidr_blocks
-  
+
   # K8s API server access
   allowed_k8s_api_cidr_blocks = var.allowed_k8s_api_cidr_blocks
 }
@@ -82,34 +82,34 @@ module "security" {
 
 module "k8s_nodes" {
   source = "./modules/compute"
-  
+
   environment = var.environment
-  
+
   # VPC Configuration
   vpc_id             = module.networking.vpc_id
   public_subnet_ids  = module.networking.public_subnet_ids
   private_subnet_ids = module.networking.private_subnet_ids
-  
+
   # Security Groups
   master_security_group_id = module.security.k8s_master_sg_id
   worker_security_group_id = module.security.k8s_worker_sg_id
   lb_security_group_id     = module.security.lb_sg_id
-  
+
   # Master Node Configuration
-  master_count        = var.master_node_count
+  master_count         = var.master_node_count
   master_instance_type = var.master_instance_type
-  
+
   # Worker Node Configuration
-  worker_count        = var.worker_node_count
+  worker_count         = var.worker_node_count
   worker_instance_type = var.worker_instance_type
-  
+
   # Storage
   root_volume_size = var.root_volume_size
   data_volume_size = var.data_volume_size
-  
+
   # SSH Key
   ssh_key_name = var.ssh_key_name
-  
+
   # Tags
   cluster_name = var.cluster_name
 }
@@ -120,18 +120,18 @@ module "k8s_nodes" {
 
 module "load_balancer" {
   source = "./modules/load_balancer"
-  
+
   environment = var.environment
   vpc_id      = module.networking.vpc_id
   subnet_ids  = module.networking.public_subnet_ids
-  
+
   security_group_id = module.security.lb_sg_id
-  
+
   master_instance_ids = module.k8s_nodes.master_instance_ids
   worker_instance_ids = module.k8s_nodes.worker_instance_ids
-  
+
   cluster_name = var.cluster_name
-  
+
   # Health check for K8s API
   health_check_path = "/healthz"
   health_check_port = 6443
@@ -143,14 +143,14 @@ module "load_balancer" {
 
 module "storage" {
   source = "./modules/storage"
-  
-  environment       = var.environment
+
+  environment        = var.environment
   availability_zones = var.availability_zones
-  
+
   # Create persistent volumes for stateful workloads
-  persistent_volume_size = var.persistent_volume_size
+  persistent_volume_size  = var.persistent_volume_size
   persistent_volume_count = var.persistent_volume_count
-  persistent_volume_type = var.persistent_volume_type
+  persistent_volume_type  = var.persistent_volume_type
 }
 
 # ============================================================================
@@ -165,8 +165,8 @@ output "vpc_id" {
 output "master_nodes" {
   description = "Master node details"
   value = {
-    public_ips  = module.k8s_nodes.master_public_ips
-    private_ips = module.k8s_nodes.master_private_ips
+    public_ips   = module.k8s_nodes.master_public_ips
+    private_ips  = module.k8s_nodes.master_private_ips
     instance_ids = module.k8s_nodes.master_instance_ids
   }
 }
@@ -174,8 +174,8 @@ output "master_nodes" {
 output "worker_nodes" {
   description = "Worker node details"
   value = {
-    public_ips  = module.k8s_nodes.worker_public_ips
-    private_ips = module.k8s_nodes.worker_private_ips
+    public_ips   = module.k8s_nodes.worker_public_ips
+    private_ips  = module.k8s_nodes.worker_private_ips
     instance_ids = module.k8s_nodes.worker_instance_ids
   }
 }
@@ -216,7 +216,7 @@ output "kubeconfig_path" {
 
 output "next_steps" {
   description = "Next steps to complete cluster setup"
-  value = <<-EOT
+  value       = <<-EOT
     
     ============================================================================
     INFRASTRUCTURE PROVISIONED SUCCESSFULLY!
@@ -256,14 +256,14 @@ output "next_steps" {
 
 resource "local_file" "ansible_inventory" {
   filename = "${path.module}/../ansible/inventory/hosts.ini"
-  
+
   content = templatefile("${path.module}/templates/ansible-inventory.tpl", {
     master_ips = module.k8s_nodes.master_public_ips
     worker_ips = module.k8s_nodes.worker_public_ips
     ssh_key    = var.ssh_key_name
     ssh_user   = var.ssh_user
   })
-  
+
   file_permission = "0644"
 }
 
@@ -273,20 +273,20 @@ resource "local_file" "ansible_inventory" {
 
 resource "local_file" "ansible_vars" {
   filename = "${path.module}/../ansible/group_vars/all.yml"
-  
+
   content = yamlencode({
-    cluster_name = var.cluster_name
-    k8s_version  = var.k8s_version
+    cluster_name     = var.cluster_name
+    k8s_version      = var.k8s_version
     k8s_distribution = var.k8s_distribution
     pod_network_cidr = var.pod_network_cidr
-    service_cidr = var.service_cidr
-    cluster_domain = var.cluster_domain
-    lb_endpoint = module.load_balancer.lb_dns_name
-    
+    service_cidr     = var.service_cidr
+    cluster_domain   = var.cluster_domain
+    lb_endpoint      = module.load_balancer.lb_dns_name
+
     # Storage configuration
     storage_class_name = "local-storage"
     persistent_volumes = module.storage.persistent_volume_ids
   })
-  
+
   file_permission = "0644"
 }
