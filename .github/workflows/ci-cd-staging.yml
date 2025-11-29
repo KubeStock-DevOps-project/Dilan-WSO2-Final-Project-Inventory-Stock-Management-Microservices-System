@@ -32,25 +32,46 @@ jobs:
             HEAD_SHA="${{ github.event.pull_request.head.sha }}"
           else
             if [ "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ]; then
-              # First push to branch
-              echo "user_service=1" >> $GITHUB_OUTPUT
-              echo "product_service=1" >> $GITHUB_OUTPUT
-              echo "inventory_service=1" >> $GITHUB_OUTPUT
-              echo "order_service=1" >> $GITHUB_OUTPUT
-              echo "supplier_service=1" >> $GITHUB_OUTPUT
-              echo "frontend=1" >> $GITHUB_OUTPUT
+              # First push to branch - build all services
+              {
+                echo "user_service=1"
+                echo "product_service=1"
+                echo "inventory_service=1"
+                echo "order_service=1"
+                echo "supplier_service=1"
+                echo "frontend=1"
+              } >> "$GITHUB_OUTPUT"
               exit 0
             fi
             BASE_SHA="${{ github.event.before }}"
             HEAD_SHA="${{ github.sha }}"
           fi
           
-          echo "user_service=$(git diff --name-only $BASE_SHA $HEAD_SHA | grep -c 'backend/services/user-service' || echo '0')" >> $GITHUB_OUTPUT
-          echo "product_service=$(git diff --name-only $BASE_SHA $HEAD_SHA | grep -c 'backend/services/product-catalog-service' || echo '0')" >> $GITHUB_OUTPUT
-          echo "inventory_service=$(git diff --name-only $BASE_SHA $HEAD_SHA | grep -c 'backend/services/inventory-service' || echo '0')" >> $GITHUB_OUTPUT
-          echo "order_service=$(git diff --name-only $BASE_SHA $HEAD_SHA | grep -c 'backend/services/order-service' || echo '0')" >> $GITHUB_OUTPUT
-          echo "supplier_service=$(git diff --name-only $BASE_SHA $HEAD_SHA | grep -c 'backend/services/supplier-service' || echo '0')" >> $GITHUB_OUTPUT
-          echo "frontend=$(git diff --name-only $BASE_SHA $HEAD_SHA | grep -c 'frontend' || echo '0')" >> $GITHUB_OUTPUT
+          # Count changes for each service
+          USER_CHANGES=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | grep -c 'backend/services/user-service' || true)
+          PRODUCT_CHANGES=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | grep -c 'backend/services/product-catalog-service' || true)
+          INVENTORY_CHANGES=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | grep -c 'backend/services/inventory-service' || true)
+          ORDER_CHANGES=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | grep -c 'backend/services/order-service' || true)
+          SUPPLIER_CHANGES=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | grep -c 'backend/services/supplier-service' || true)
+          FRONTEND_CHANGES=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | grep -c 'frontend' || true)
+          
+          # Set defaults if empty
+          USER_CHANGES=${USER_CHANGES:-0}
+          PRODUCT_CHANGES=${PRODUCT_CHANGES:-0}
+          INVENTORY_CHANGES=${INVENTORY_CHANGES:-0}
+          ORDER_CHANGES=${ORDER_CHANGES:-0}
+          SUPPLIER_CHANGES=${SUPPLIER_CHANGES:-0}
+          FRONTEND_CHANGES=${FRONTEND_CHANGES:-0}
+          
+          # Write to output
+          {
+            echo "user_service=$USER_CHANGES"
+            echo "product_service=$PRODUCT_CHANGES"
+            echo "inventory_service=$INVENTORY_CHANGES"
+            echo "order_service=$ORDER_CHANGES"
+            echo "supplier_service=$SUPPLIER_CHANGES"
+            echo "frontend=$FRONTEND_CHANGES"
+          } >> "$GITHUB_OUTPUT"
       
       - name: Pipeline start notification
         run: |
