@@ -1,12 +1,6 @@
 export const API_ENDPOINTS = {
-  // User Service
-  AUTH: {
-    LOGIN: "/api/auth/login",
-    REGISTER: "/api/auth/register",
-    PROFILE: "/api/auth/profile",
-    CHANGE_PASSWORD: "/api/auth/change-password",
-  },
-  USERS: "/api/users",
+  // Note: User authentication is handled by Asgardeo
+  // No local auth endpoints needed
 
   // Product Catalog Service
   PRODUCTS: {
@@ -34,7 +28,6 @@ export const API_ENDPOINTS = {
 
   // Health Checks
   HEALTH: {
-    USER: "/health",
     PRODUCT: "/health",
     INVENTORY: "/health",
     SUPPLIER: "/health",
@@ -43,7 +36,6 @@ export const API_ENDPOINTS = {
 };
 
 export const SERVICES = {
-  USER: import.meta.env.VITE_USER_SERVICE_URL || "http://localhost:3001",
   PRODUCT: import.meta.env.VITE_PRODUCT_SERVICE_URL || "http://localhost:3002",
   INVENTORY:
     import.meta.env.VITE_INVENTORY_SERVICE_URL || "http://localhost:3003",

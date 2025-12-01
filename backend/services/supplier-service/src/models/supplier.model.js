@@ -90,18 +90,26 @@ class Supplier {
     }
   }
 
-  static async findByUserId(userId) {
-    const query = "SELECT * FROM suppliers WHERE user_id = $1";
+  /**
+   * Find supplier by Asgardeo subject ID
+   * Used for linking Asgardeo users to supplier profiles
+   */
+  static async findByAsgardeoSub(asgardeoSub) {
+    const query = "SELECT * FROM suppliers WHERE asgardeo_sub = $1";
 
     try {
-      const result = await db.query(query, [userId]);
+      const result = await db.query(query, [asgardeoSub]);
       return result.rows[0];
     } catch (error) {
-      logger.error(`Error fetching supplier for user ${userId}:`, error);
+      logger.error(`Error fetching supplier for Asgardeo sub ${asgardeoSub}:`, error);
       throw error;
     }
   }
 
+  /**
+   * Find supplier by email address
+   * Primary method for linking Asgardeo users to suppliers
+   */
   static async findByEmail(email) {
     const query = "SELECT * FROM suppliers WHERE email = $1";
 
@@ -112,6 +120,20 @@ class Supplier {
       logger.error(`Error fetching supplier for email ${email}:`, error);
       throw error;
     }
+  }
+
+  /**
+   * Find supplier by user identifier (email or Asgardeo sub)
+   * Convenience method that tries email first, then asgardeo_sub
+   */
+  static async findByUserIdentifier(identifier) {
+    // Try email first (most common)
+    let supplier = await this.findByEmail(identifier);
+    if (supplier) return supplier;
+
+    // Try asgardeo_sub
+    supplier = await this.findByAsgardeoSub(identifier);
+    return supplier;
   }
 
   static async update(id, updates) {

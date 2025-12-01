@@ -2,25 +2,6 @@ import axios from "axios";
 import { SERVICES } from "../utils/constants";
 
 export const healthService = {
-  checkUserService: async () => {
-    try {
-      const response = await axios.get(`${SERVICES.USER}/health`, {
-        timeout: 5000,
-      });
-      return {
-        status: "healthy",
-        service: "User Service",
-        data: response.data,
-      };
-    } catch (error) {
-      return {
-        status: "unhealthy",
-        service: "User Service",
-        error: error.message,
-      };
-    }
-  },
-
   checkProductService: async () => {
     try {
       const response = await axios.get(`${SERVICES.PRODUCT}/health`, {
@@ -99,7 +80,6 @@ export const healthService = {
 
   checkAllServices: async () => {
     const results = await Promise.all([
-      healthService.checkUserService(),
       healthService.checkProductService(),
       healthService.checkInventoryService(),
       healthService.checkSupplierService(),

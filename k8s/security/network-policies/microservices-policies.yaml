@@ -58,43 +58,8 @@ spec:
         - protocol: TCP
           port: 3004
 ---
-# User Service - Allow ingress from Kong only
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: user-service-policy
-  namespace: default
-spec:
-  podSelector:
-    matchLabels:
-      app: user-service
-  policyTypes:
-    - Ingress
-    - Egress
-  ingress:
-    - from:
-        - podSelector:
-            matchLabels:
-              app: kong-gateway
-      ports:
-        - protocol: TCP
-          port: 3000
-  egress:
-    # DNS
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: kube-system
-      ports:
-        - protocol: UDP
-          port: 53
-    # Database (if external)
-    - ports:
-        - protocol: TCP
-          port: 5432
-        - protocol: TCP
-          port: 3306
----
+# Note: User authentication is handled by Asgardeo/Istio - no user-service network policy needed
+
 # Inventory Service - Allow Kong and Order Service
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

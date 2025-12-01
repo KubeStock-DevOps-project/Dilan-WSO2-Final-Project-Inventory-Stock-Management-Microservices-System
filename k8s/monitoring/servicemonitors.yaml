@@ -1,24 +1,6 @@
 # ServiceMonitors for Inventory System Microservices
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: user-service
-  namespace: monitoring
-  labels:
-    team: inventory-system
-spec:
-  selector:
-    matchLabels:
-      app: user-service
-  namespaceSelector:
-    matchNames:
-    - inventory-system
-  endpoints:
-  - port: http
-    interval: 30s
-    path: /metrics
+# Note: User authentication is handled by Asgardeo - no user-service to monitor
 
----
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:

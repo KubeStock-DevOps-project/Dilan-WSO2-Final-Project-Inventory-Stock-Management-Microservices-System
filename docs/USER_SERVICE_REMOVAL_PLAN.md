@@ -1,8 +1,9 @@
 # User Service Removal Plan
 
-> **Document Version:** 1.0  
+> **Document Version:** 1.1  
 > **Created:** December 1, 2025  
-> **Status:** Proposed Changes  
+> **Updated:** December 2, 2025  
+> **Status:** ✅ IMPLEMENTED  
 > **Target Architecture:** Istio + Asgardeo (No Local User Service)
 
 ---
@@ -470,45 +471,45 @@ WHERE s.asgardeo_sub IS NULL;
 
 ## Migration Steps
 
-### Phase 1: Preparation (Low Risk)
+### Phase 1: Preparation (Low Risk) ✅ COMPLETE
 
-- [ ] Create backup of `users` table data
-- [ ] Document any custom user data that needs preservation
-- [ ] Verify Asgardeo has all required user attributes
-- [ ] Verify Asgardeo groups match application roles
+- [x] Create backup of `users` table data
+- [x] Document any custom user data that needs preservation
+- [x] Verify Asgardeo has all required user attributes
+- [x] Verify Asgardeo groups match application roles
 
-### Phase 2: Database Migration
+### Phase 2: Database Migration ✅ COMPLETE
 
-- [ ] Run SQL migration to add `asgardeo_sub` column to `suppliers`
-- [ ] Update `stock_movements.performed_by` column type
-- [ ] Migrate existing data (map email to Asgardeo sub)
-- [ ] Test foreign key relationships
+- [x] Run SQL migration to add `asgardeo_sub` column to `suppliers`
+- [x] Update `stock_movements.performed_by` column type
+- [x] Migrate existing data (map email to Asgardeo sub)
+- [x] Test foreign key relationships
 
-### Phase 3: Backend Changes
+### Phase 3: Backend Changes ✅ COMPLETE
 
-- [ ] Create shared `tokenDecoder.js` middleware
-- [ ] Update Supplier Service to use `asgardeo_sub` / `email`
-- [ ] Remove all `asgardeo.middleware.js` copies from services
-- [ ] Remove `auth.middleware.js` copies from services
-- [ ] Delete User Service directory entirely
+- [x] Create shared `tokenDecoder.js` middleware
+- [x] Update Supplier Service to use `asgardeo_sub` / `email`
+- [x] Remove all `asgardeo.middleware.js` copies from services
+- [x] Remove `auth.middleware.js` copies from services
+- [x] Delete User Service directory entirely
 
-### Phase 4: Frontend Changes
+### Phase 4: Frontend Changes ✅ COMPLETE
 
-- [ ] Remove `authService.js`
-- [ ] Remove/update `userService.js`
-- [ ] Update `AdminDashboard.jsx` (remove user count or use SCIM)
-- [ ] Clean up `AsgardeoAuthContext.jsx` (remove debug logs)
-- [ ] Update `constants.js` (remove AUTH endpoints)
-- [ ] Delete unused auth pages
+- [x] Remove `authService.js`
+- [x] Remove/update `userService.js`
+- [x] Update `AdminDashboard.jsx` (remove user count or use SCIM)
+- [x] Clean up `AsgardeoAuthContext.jsx` (remove debug logs)
+- [x] Update `constants.js` (remove AUTH endpoints)
+- [x] Delete unused auth pages
 
-### Phase 5: Infrastructure Changes
+### Phase 5: Infrastructure Changes ✅ COMPLETE
 
-- [ ] Remove User Service from `docker-compose.yml`
-- [ ] Delete Kubernetes manifests for User Service
-- [ ] Update Istio VirtualService (remove user-service routes)
-- [ ] Update monitoring/alerting (remove user-service targets)
+- [x] Remove User Service from `docker-compose.yml`
+- [x] Delete Kubernetes manifests for User Service
+- [x] Update Istio VirtualService (remove user-service routes)
+- [x] Update monitoring/alerting (remove user-service targets)
 
-### Phase 6: Testing
+### Phase 6: Testing ⏳ PENDING
 
 - [ ] Test login flow end-to-end
 - [ ] Test role-based access (admin, warehouse_staff, supplier)

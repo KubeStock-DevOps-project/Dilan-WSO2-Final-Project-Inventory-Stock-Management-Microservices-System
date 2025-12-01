@@ -1,33 +1,14 @@
+-- ============================================
+-- Database Initialization Script
+-- Note: User authentication is handled by Asgardeo
+-- No local user database needed
+-- ============================================
+
 -- Create databases for each microservice
-CREATE DATABASE user_service_db;
 CREATE DATABASE product_catalog_db;
 CREATE DATABASE inventory_db;
 CREATE DATABASE supplier_db;
 CREATE DATABASE order_db;
-
--- Connect to user_service_db and create schema
-\c user_service_db;
-
-CREATE TABLE IF NOT EXISTS users (
-    id SERIAL PRIMARY KEY,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    full_name VARCHAR(100),
-    role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'warehouse_staff', 'supplier')),
-    is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_username ON users(username);
-CREATE INDEX idx_users_role ON users(role);
-
--- Insert default admin user (password: admin123)
-INSERT INTO users (username, email, password_hash, full_name, role) 
-VALUES ('admin', 'admin@ims.com', '$2b$10$rKvVLZ8D3yP7YxK5sQ8Q9eLZJ4Zz5xZXzXzXzXzXzXzXzXzXzXzXz', 'System Administrator', 'admin')
-ON CONFLICT DO NOTHING;
 
 -- Connect to product_catalog_db and create schema
 \c product_catalog_db;

@@ -1,7 +1,8 @@
 import axios from "axios";
 
+// Default to product service URL since we no longer have a user service
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:3002";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -13,10 +14,8 @@ const api = axios.create({
 // Request interceptor for adding auth token
 api.interceptors.request.use(
   (config) => {
-    // Try to get Asgardeo token first, fallback to old JWT token
-    const asgardeoToken = localStorage.getItem("asgardeo_token");
-    const jwtToken = localStorage.getItem("token");
-    const token = asgardeoToken || jwtToken;
+    // Get JWT token from localStorage (set by AsgardeoAuthContext)
+    const token = localStorage.getItem("token");
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -35,8 +34,6 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       // Token expired or invalid
       localStorage.removeItem("token");
-      localStorage.removeItem("asgardeo_token");
-      localStorage.removeItem("user");
 
       // Don't redirect if already on login page
       if (!window.location.pathname.includes("/login")) {

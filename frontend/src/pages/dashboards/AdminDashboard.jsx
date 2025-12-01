@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import {
-  Users,
   Package,
   TrendingUp,
   AlertCircle,
   Activity,
   Box,
+  ShoppingCart,
 } from "lucide-react";
 import Card from "../../components/common/Card";
 import {
@@ -21,7 +21,6 @@ import {
 } from "recharts";
 import { productService } from "../../services/productService";
 import { inventoryService } from "../../services/inventoryService";
-import { userService } from "../../services/userService";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import toast from "react-hot-toast";
 
@@ -31,7 +30,7 @@ const AdminDashboard = () => {
     totalProducts: 0,
     totalInventory: 0,
     lowStockItems: 0,
-    totalUsers: 0,
+    activeCategories: 0,
   });
   const [stockMovements, setStockMovements] = useState([]);
   const [categoryData, setCategoryData] = useState([]);
@@ -43,10 +42,10 @@ const AdminDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const [products, inventory, users, movements] = await Promise.all([
+      const [products, inventory, categories, movements] = await Promise.all([
         productService.getAllProducts(),
         inventoryService.getAllInventory(),
-        userService.getAllUsers().catch(() => ({ data: [] })),
+        productService.getAllCategories().catch(() => ({ data: [] })),
         inventoryService
           .getStockMovements({ limit: 6 })
           .catch(() => ({ data: [] })),
@@ -60,7 +59,7 @@ const AdminDashboard = () => {
         lowStockItems:
           inventory.data?.filter((item) => item.quantity < item.min_quantity)
             .length || 0,
-        totalUsers: users.data?.length || 0,
+        activeCategories: categories.data?.length || 0,
       });
 
       // Process stock movements for chart
@@ -183,10 +182,10 @@ const AdminDashboard = () => {
         <Card className="bg-green-600 text-white">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm opacity-90">Active Users</p>
-              <h3 className="text-3xl font-bold mt-2">{stats.totalUsers}</h3>
+              <p className="text-sm opacity-90">Categories</p>
+              <h3 className="text-3xl font-bold mt-2">{stats.activeCategories}</h3>
             </div>
-            <Users size={40} className="opacity-80" />
+            <ShoppingCart size={40} className="opacity-80" />
           </div>
         </Card>
       </div>

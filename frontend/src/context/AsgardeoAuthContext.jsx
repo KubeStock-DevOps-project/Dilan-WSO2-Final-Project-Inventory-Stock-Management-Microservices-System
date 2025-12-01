@@ -18,8 +18,6 @@ export const AsgardeoAuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  console.log("🔧 AsgardeoAuthProvider initialized");
-
   // Asgardeo hooks
   const {
     state,
@@ -28,26 +26,17 @@ export const AsgardeoAuthProvider = ({ children }) => {
     getBasicUserInfo,
     getIDToken,
     getAccessToken,
-    getDecodedIDToken,
-    on,
   } = useAuthContext();
 
-  console.log("🔍 Asgardeo Auth State:", {
-    isAuthenticated: state?.isAuthenticated,
-    isLoading: state?.isLoading,
-    username: state?.username,
-    displayName: state?.displayName
-  });
-
-  // Helper function to get actual JWT access token from sessionStorage
+  /**
+   * Get actual JWT access token
+   * Tries multiple methods to ensure we get a valid JWT
+   */
   const getRealAccessToken = async () => {
     try {
-      // Try multiple methods to get the actual JWT token
-
-      // Method 1: Try getIDToken (ID tokens are JWTs)
+      // Method 1: Try getIDToken (ID tokens are always JWTs)
       const idToken = await getIDToken();
       if (idToken && idToken.length > 100 && idToken.startsWith("ey")) {
-        console.log("✅ Using ID Token as access token (JWT format)");
         return idToken;
       }
 
@@ -58,100 +47,29 @@ export const AsgardeoAuthProvider = ({ children }) => {
       if (sessionData) {
         const parsed = JSON.parse(sessionData);
         if (parsed.access_token && parsed.access_token.length > 100) {
-          console.log("✅ Found JWT access token in sessionStorage");
           return parsed.access_token;
         }
       }
 
-      // Method 3: Try getAccessToken() anyway
+      // Method 3: Fallback to getAccessToken()
       const accessToken = await getAccessToken();
-      console.log("⚠️ Falling back to getAccessToken() result");
       return accessToken;
     } catch (error) {
-      console.error("❌ Error getting access token:", error);
+      console.error("Error getting access token:", error);
       return null;
     }
   };
 
-  // Sync Asgardeo state with our user state
-  useEffect(() => {
-    const initAuth = async () => {
-      try {
-        console.log("🔄 Initializing auth, state:", state);
-        if (state.isAuthenticated) {
-          console.log("✅ User is authenticated");
-          // Get user info from Asgardeo
-          const basicUserInfo = await getBasicUserInfo();
-          console.log("👤 Basic user info:", basicUserInfo);
-
-          // Get actual JWT access token
-          const accessToken = await getRealAccessToken();
-          console.log("🔑 Access token debug:");
-          console.log("  Type:", typeof accessToken);
-          console.log("  Length:", accessToken?.length);
-          console.log(
-            "  Preview:",
-            accessToken ? `${accessToken.substring(0, 100)}...` : "None"
-          );
-          console.log("  Is JWT?", accessToken?.startsWith("ey") || false);
-
-          // Map Asgardeo user to our user format
-          const mappedUser = {
-            id: basicUserInfo.sub,
-            username:
-              basicUserInfo.username || basicUserInfo.email?.split("@")[0],
-            email: basicUserInfo.email,
-            role: mapAsgardeoRoleToAppRole(basicUserInfo.groups || []),
-            asgardeoUser: basicUserInfo,
-            accessToken: accessToken,
-          };
-
-          console.log("✅ Mapped user:", mappedUser);
-          setUser(mappedUser);
-
-          // Store token in API service
-          if (accessToken) {
-            localStorage.setItem("asgardeo_token", accessToken);
-            localStorage.setItem("token", accessToken); // Also store as 'token' for services
-            console.log("💾 Token stored in localStorage");
-          }
-        } else {
-          console.log("❌ User is not authenticated");
-          setUser(null);
-          localStorage.removeItem("asgardeo_token");
-          localStorage.removeItem("token"); // Also remove 'token'
-        }
-      } catch (error) {
-        console.error("❌ Error initializing auth:", error);
-        console.error("  Error details:", {
-          name: error.name,
-          message: error.message,
-          stack: error.stack,
-        });
-      } finally {
-        setLoading(false);
-        console.log("✅ Auth initialization complete");
-      }
-    };
-
-    initAuth();
-  }, [state.isAuthenticated]);
-
   /**
    * Map Asgardeo groups/roles to application roles
-   * Customize this based on your Asgardeo role configuration
    */
   const mapAsgardeoRoleToAppRole = (groups) => {
-    console.log("🔍 Mapping groups to role:", groups);
-
     if (!groups || groups.length === 0) {
-      console.warn("⚠️ No groups found - defaulting to warehouse_staff");
-      return "warehouse_staff"; // Changed default from customer to warehouse_staff
+      return "warehouse_staff"; // Default role
     }
 
     // Check for admin role
     if (groups.some((g) => g.toLowerCase().includes("admin"))) {
-      console.log("✅ Matched role: admin");
       return "admin";
     }
 
@@ -163,41 +81,66 @@ export const AsgardeoAuthProvider = ({ children }) => {
           g.toLowerCase().includes("staff")
       )
     ) {
-      console.log("✅ Matched role: warehouse_staff");
       return "warehouse_staff";
     }
 
     // Check for supplier
     if (groups.some((g) => g.toLowerCase().includes("supplier"))) {
-      console.log("✅ Matched role: supplier");
       return "supplier";
     }
 
-    // Default to warehouse_staff if no match
-    console.warn("⚠️ No matching group - defaulting to warehouse_staff");
     return "warehouse_staff";
   };
 
+  // Sync Asgardeo state with our user state
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        if (state.isAuthenticated) {
+          // Get user info from Asgardeo
+          const basicUserInfo = await getBasicUserInfo();
+
+          // Get JWT access token
+          const accessToken = await getRealAccessToken();
+
+          // Map Asgardeo user to our user format
+          const mappedUser = {
+            id: basicUserInfo.sub,
+            sub: basicUserInfo.sub, // Asgardeo unique ID
+            username:
+              basicUserInfo.username || basicUserInfo.email?.split("@")[0],
+            email: basicUserInfo.email,
+            fullName: basicUserInfo.name || "",
+            role: mapAsgardeoRoleToAppRole(basicUserInfo.groups || []),
+            groups: basicUserInfo.groups || [],
+            asgardeoUser: basicUserInfo,
+          };
+
+          setUser(mappedUser);
+
+          // Store token for API calls
+          if (accessToken) {
+            localStorage.setItem("token", accessToken);
+          }
+        } else {
+          setUser(null);
+          localStorage.removeItem("token");
+        }
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initAuth();
+  }, [state.isAuthenticated]);
+
   const login = async () => {
     try {
-      console.log("🔐 Attempting Asgardeo login...");
-      console.log("  Current window.location:", window.location.href);
-      console.log("  Current origin:", window.location.origin);
-      console.log("  Auth state:", state);
-      console.log("  Calling signIn()...");
-      
-      const result = await signIn();
-      
-      console.log("✅ SignIn triggered successfully");
-      console.log("  SignIn result:", result);
-      // The actual login redirect will be handled by Asgardeo
-      // User will be set in the useEffect when they return
+      await signIn();
     } catch (error) {
-      console.error("❌ Login error:", error);
-      console.error("  Error name:", error.name);
-      console.error("  Error message:", error.message);
-      console.error("  Error stack:", error.stack);
-      console.error("  Full error object:", JSON.stringify(error, null, 2));
+      console.error("Login error:", error);
       toast.error(`Login failed: ${error.message || "Please try again"}`);
       throw error;
     }
@@ -207,7 +150,8 @@ export const AsgardeoAuthProvider = ({ children }) => {
     try {
       await signOut();
       setUser(null);
-      localStorage.removeItem("asgardeo_token");
+      localStorage.removeItem("token");
+      sessionStorage.removeItem("has_navigated");
       toast.success("Logged out successfully");
       navigate("/");
     } catch (error) {
@@ -226,7 +170,6 @@ export const AsgardeoAuthProvider = ({ children }) => {
   // Handle post-login navigation
   useEffect(() => {
     if (user && !loading) {
-      // Only navigate on initial login, not on page refresh
       const hasNavigated = sessionStorage.getItem("has_navigated");
 
       if (!hasNavigated) {
@@ -261,8 +204,7 @@ export const AsgardeoAuthProvider = ({ children }) => {
       }
       return user.role === roles;
     },
-    // Expose Asgardeo methods for advanced use
-    getAccessToken: getRealAccessToken, // Use our custom function
+    getAccessToken: getRealAccessToken,
     getIDToken,
     asgardeoState: state,
   };
@@ -270,5 +212,5 @@ export const AsgardeoAuthProvider = ({ children }) => {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-// Keep backward compatibility with old AuthProvider name
+// Backward compatibility
 export const AuthProvider = AsgardeoAuthProvider;
