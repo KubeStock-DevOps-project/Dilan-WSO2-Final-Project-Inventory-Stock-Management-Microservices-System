@@ -9,8 +9,9 @@ const INVENTORY_SERVICE_URL =
   process.env.INVENTORY_SERVICE_URL || "http://inventory-service:3003";
 const PRODUCT_SERVICE_URL =
   process.env.PRODUCT_SERVICE_URL || "http://product-catalog-service:3002";
-const USER_SERVICE_URL =
-  process.env.USER_SERVICE_URL || "http://user-service:3001";
+
+// Note: User authentication is handled by Asgardeo
+// Customer identity comes from the decoded JWT token (sub claim)
 
 class OrderService {
   /**
@@ -22,10 +23,10 @@ class OrderService {
     try {
       await client.query("BEGIN");
 
-      // Step 1: Validate customer
-      await this.validateCustomer(orderData.customer_id);
+      // Customer validation is handled by Asgardeo/Istio at gateway level
+      // The customer_id should be the Asgardeo subject (sub) from the decoded token
 
-      // Step 2: Validate and enrich product data
+      // Step 1: Validate and enrich product data
       const enrichedItems = await this.validateAndEnrichItems(orderData.items);
 
       // Step 3: Check stock availability for all items
@@ -89,33 +90,8 @@ class OrderService {
     }
   }
 
-  /**
-   * Validate customer exists and is active
-   */
-  static async validateCustomer(customerId) {
-    try {
-      const response = await axios.get(
-        `${USER_SERVICE_URL}/api/users/${customerId}`
-      );
-      const user = response.data;
-
-      if (!user) {
-        throw new Error(`Customer ${customerId} not found`);
-      }
-
-      if (!user.is_active) {
-        throw new Error(`Customer ${customerId} is not active`);
-      }
-
-      return user;
-    } catch (error) {
-      if (error.response?.status === 404) {
-        throw new Error(`Customer ${customerId} not found`);
-      }
-      logger.error("Error validating customer:", error.message);
-      throw new Error("Unable to validate customer");
-    }
-  }
+  // Customer validation is handled by Asgardeo at the gateway level
+  // The customer_id is the Asgardeo subject (sub) from the decoded JWT token
 
   /**
    * Validate items and enrich with product data

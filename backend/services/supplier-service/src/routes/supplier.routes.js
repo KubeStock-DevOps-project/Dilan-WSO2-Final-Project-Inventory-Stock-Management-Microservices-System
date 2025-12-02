@@ -4,7 +4,7 @@ const supplierController = require("../controllers/supplier.controller");
 const {
   authenticateAsgardeo,
   authorizeRoles,
-} = require("../middlewares/asgardeo.middleware");
+} = require("../middlewares/token.middleware");
 
 // Create a new supplier
 router.post("/", supplierController.createSupplier);

@@ -72,10 +72,11 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 // Start server
-const server = app.listen(PORT, () => {
-  logger.info(`Order Service running on port ${PORT}`);
+const HOST = process.env.HOST || '127.0.0.1';
+const server = app.listen(PORT, HOST, () => {
+  logger.info(`Order Service running on http://${HOST}:${PORT}`);
   logger.info(`Environment: ${process.env.NODE_ENV || "development"}`);
-  logger.info(`Metrics available at http://localhost:${PORT}/metrics`);
+  logger.info(`Metrics available at http://${HOST}:${PORT}/metrics`);
 });
 
 const gracefulShutdown = (signal) => {

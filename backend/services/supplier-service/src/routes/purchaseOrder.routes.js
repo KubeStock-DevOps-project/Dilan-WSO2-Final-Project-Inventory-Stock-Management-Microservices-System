@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const purchaseOrderController = require("../controllers/purchaseOrder.controller");
-const { authenticateAsgardeo } = require("../middlewares/asgardeo.middleware");
+const { authenticateAsgardeo } = require("../middlewares/token.middleware");
 // const { purchaseOrderValidation } = require("../middlewares/validation.middleware");
 
 // Create a new purchase order

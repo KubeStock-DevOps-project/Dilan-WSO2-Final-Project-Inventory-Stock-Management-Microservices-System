@@ -1,0 +1,30 @@
+version: '3.8'
+
+# PostgreSQL Only - For local development
+# Run services manually with `npm run dev` in each service directory
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: ims-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ims_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  default:
+    driver: bridge
+
+volumes:
+  postgres_data:

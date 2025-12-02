@@ -4,7 +4,7 @@ const PricingController = require("../controllers/pricing.controller");
 const {
   authenticateAsgardeo,
   authorizeRoles,
-} = require("../middlewares/asgardeo.middleware");
+} = require("../middlewares/token.middleware");
 
 /**
  * Production-Grade Pricing Routes

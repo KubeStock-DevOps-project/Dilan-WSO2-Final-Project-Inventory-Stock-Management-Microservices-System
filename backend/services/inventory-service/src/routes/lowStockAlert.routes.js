@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const lowStockAlertController = require("../controllers/lowStockAlert.controller");
-const { authenticateAsgardeo } = require("../middlewares/asgardeo.middleware");
+const { authenticateAsgardeo } = require("../middlewares/token.middleware");
 
 // Protected routes - require authentication
 // Get low stock alerts

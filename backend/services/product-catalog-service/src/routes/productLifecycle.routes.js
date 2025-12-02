@@ -4,7 +4,7 @@ const ProductLifecycleController = require("../controllers/productLifecycle.cont
 const {
   authenticateAsgardeo,
   authorizeRoles,
-} = require("../middlewares/asgardeo.middleware");
+} = require("../middlewares/token.middleware");
 
 /**
  * Production-Grade Product Lifecycle Routes

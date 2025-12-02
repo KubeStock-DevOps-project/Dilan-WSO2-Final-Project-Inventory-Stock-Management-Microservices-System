@@ -88,10 +88,11 @@ app.use((req, res) => {
 
 app.use(errorHandler);
 
-const server = app.listen(PORT, () => {
-  logger.info(`Product Catalog Service running on port ${PORT}`);
+const HOST = process.env.HOST || '127.0.0.1';
+const server = app.listen(PORT, HOST, () => {
+  logger.info(`Product Catalog Service running on http://${HOST}:${PORT}`);
   logger.info(`Environment: ${process.env.NODE_ENV}`);
-  logger.info(`Metrics available at http://localhost:${PORT}/metrics`);
+  logger.info(`Metrics available at http://${HOST}:${PORT}/metrics`);
 });
 
 // Graceful shutdown

@@ -65,9 +65,10 @@ app.use((req, res) => {
   res.status(404).json({ success: false, message: "Route not found" });
 });
 
-const server = app.listen(PORT, () => {
-  logger.info(`Supplier Service running on port ${PORT}`);
-  logger.info(`Metrics available at http://localhost:${PORT}/metrics`);
+const HOST = process.env.HOST || '127.0.0.1';
+const server = app.listen(PORT, HOST, () => {
+  logger.info(`Supplier Service running on http://${HOST}:${PORT}`);
+  logger.info(`Metrics available at http://${HOST}:${PORT}/metrics`);
 });
 
 const gracefulShutdown = (signal) => {

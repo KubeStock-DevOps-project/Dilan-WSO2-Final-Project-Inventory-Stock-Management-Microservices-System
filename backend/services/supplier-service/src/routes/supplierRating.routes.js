@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const supplierRatingController = require("../controllers/supplierRating.controller");
-const { authenticateAsgardeo } = require("../middlewares/asgardeo.middleware");
+const { authenticateAsgardeo } = require("../middlewares/token.middleware");
 
 // All rating endpoints require authentication
 router.use(authenticateAsgardeo);
