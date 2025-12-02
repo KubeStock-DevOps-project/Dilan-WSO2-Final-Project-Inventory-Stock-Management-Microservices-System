@@ -1,47 +1,94 @@
 import axios from "axios";
 
-// Default to product service URL since we no longer have a user service
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:3002";
-
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-// Request interceptor for adding auth token
-api.interceptors.request.use(
-  (config) => {
-    // Get JWT token from localStorage (set by AsgardeoAuthContext)
-    const token = localStorage.getItem("token");
-
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+/**
+ * Get access token from Asgardeo session storage
+ * The Asgardeo SDK stores tokens in sessionStorage with a specific key pattern
+ */
+const getAsgardeoToken = () => {
+  const clientId = import.meta.env.VITE_ASGARDEO_CLIENT_ID;
+  
+  // Try session storage first (default Asgardeo storage)
+  const sessionData = sessionStorage.getItem(`session_data-instance_0`);
+  if (sessionData) {
+    try {
+      const parsed = JSON.parse(sessionData);
+      if (parsed.access_token) {
+        return parsed.access_token;
+      }
+    } catch (e) {
+      // Parse error, try other methods
     }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
   }
-);
 
-// Response interceptor for handling errors
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid
-      localStorage.removeItem("token");
+  // Try with client ID pattern
+  const clientSessionData = sessionStorage.getItem(`session_data-${clientId}`);
+  if (clientSessionData) {
+    try {
+      const parsed = JSON.parse(clientSessionData);
+      if (parsed.access_token) {
+        return parsed.access_token;
+      }
+    } catch (e) {
+      // Parse error
+    }
+  }
 
-      // Don't redirect if already on login page
-      if (!window.location.pathname.includes("/login")) {
-        window.location.href = "/login";
+  // Fallback: search all session storage for Asgardeo token
+  for (let i = 0; i < sessionStorage.length; i++) {
+    const key = sessionStorage.key(i);
+    if (key.includes("session_data")) {
+      try {
+        const data = JSON.parse(sessionStorage.getItem(key));
+        if (data.access_token) {
+          return data.access_token;
+        }
+      } catch (e) {
+        // Continue searching
       }
     }
-    return Promise.reject(error);
   }
-);
 
-export default api;
+  return null;
+};
+
+/**
+ * Create an axios instance with automatic Asgardeo token injection
+ */
+export const createApiClient = (baseURL) => {
+  const instance = axios.create({
+    baseURL,
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  // Request interceptor - inject Asgardeo token
+  instance.interceptors.request.use(
+    (config) => {
+      const token = getAsgardeoToken();
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    },
+    (error) => Promise.reject(error)
+  );
+
+  // Response interceptor - handle auth errors
+  instance.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      if (error.response?.status === 401) {
+        // Clear session and redirect to login
+        if (!window.location.pathname.includes("/login")) {
+          window.location.href = "/login";
+        }
+      }
+      return Promise.reject(error);
+    }
+  );
+
+  return instance;
+};
+
+export default createApiClient;

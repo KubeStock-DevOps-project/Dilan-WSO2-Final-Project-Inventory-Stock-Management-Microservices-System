@@ -1,111 +1,95 @@
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AsgardeoAuthContext";
-import Button from "../../components/common/Button";
-import { Shield } from "lucide-react";
+import { Shield, Loader2 } from "lucide-react";
 
+/**
+ * Simplified Login Page
+ * Just redirects to Asgardeo for authentication
+ */
 const Login = () => {
-  const { login, user, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, loading, user } = useAuth();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
 
   // Redirect if already authenticated
   useEffect(() => {
-    console.log("🔍 Login useEffect - Checking auth:", { isAuthenticated, user: user?.username, role: user?.role });
     if (isAuthenticated && user) {
-      const role = user.role;
-      console.log("✅ User is authenticated, redirecting to dashboard for role:", role);
-      if (role === "admin") {
-        console.log("  → Navigating to /dashboard/admin");
-        navigate("/dashboard/admin", { replace: true });
-      } else if (role === "warehouse_staff") {
-        console.log("  → Navigating to /dashboard/warehouse");
-        navigate("/dashboard/warehouse", { replace: true });
-      } else if (role === "supplier") {
-        console.log("  → Navigating to /dashboard/supplier");
-        navigate("/dashboard/supplier", { replace: true });
-      } else {
-        console.log("  → Navigating to /products");
-        navigate("/products", { replace: true });
-      }
-    } else {
-      console.log("⏳ Not redirecting - isAuthenticated:", isAuthenticated, "user:", !!user);
+      const dashboards = {
+        admin: "/dashboard/admin",
+        warehouse_staff: "/dashboard/warehouse",
+        supplier: "/dashboard/supplier",
+      };
+      navigate(dashboards[user.role] || "/products", { replace: true });
     }
   }, [isAuthenticated, user, navigate]);
 
-  const handleAsgardeoLogin = async () => {
-    console.log("🚀 Starting Asgardeo login...");
-    console.log("  Current URL:", window.location.href);
-    console.log("  Current Origin:", window.location.origin);
-    setLoading(true);
+  const handleLogin = async () => {
     try {
-      console.log("  Calling login() function...");
       await login();
-      console.log("  Login() completed successfully");
     } catch (error) {
-      console.error("❌ Login error:", error);
-      console.error("  Error details:", {
-        message: error.message,
-        stack: error.stack,
-        name: error.name
-      });
-    } finally {
-      setLoading(false);
-      console.log("  Login process finished");
+      console.error("Login failed:", error);
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-orange-500 mx-auto" />
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-md mx-auto">
-      <div className="text-center mb-8">
-        <div className="flex justify-center mb-4">
-          <div className="p-3 bg-primary-100 rounded-full">
-            <Shield className="w-8 h-8 text-primary-600" />
-          </div>
-        </div>
-        <h2 className="text-2xl font-bold text-dark-900">Welcome Back</h2>
-        <p className="text-dark-600 mt-2">
-          Secure authentication with Asgardeo
-        </p>
-      </div>
-
-      <div className="bg-white p-8 rounded-xl shadow-sm border border-dark-200">
-        <div className="space-y-6">
-          <div className="text-center p-6 bg-primary-50 rounded-lg">
-            <h3 className="text-lg font-semibold text-dark-900 mb-2">
-              Sign In with Asgardeo
-            </h3>
-            <p className="text-dark-600 mb-4">
-              This application uses WSO2 Asgardeo for secure authentication.
-              Click below to sign in through Asgardeo.
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="max-w-md w-full mx-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8">
+          {/* Logo/Brand */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-100 rounded-full mb-4">
+              <Shield className="w-8 h-8 text-orange-600" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Inventory Management System
+            </h1>
+            <p className="text-gray-500 mt-2">
+              Secure authentication powered by Asgardeo
             </p>
-            <Button
-              onClick={handleAsgardeoLogin}
-              variant="primary"
-              className="w-full flex items-center justify-center gap-2"
-              loading={loading}
-            >
-              <Shield className="w-5 h-5" />
-              {loading ? "Redirecting..." : "Sign In with Asgardeo"}
-            </Button>
           </div>
 
-          <div className="text-center">
-            <p className="text-dark-600">
-              Don't have an account?{" "}
-              <Link
-                to="/register"
-                className="text-primary-600 hover:text-primary-700 font-medium"
+          {/* Login Button */}
+          <button
+            onClick={handleLogin}
+            className="w-full flex items-center justify-center gap-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
+          >
+            <Shield className="w-5 h-5" />
+            Sign in with Asgardeo
+          </button>
+
+          {/* Info */}
+          <div className="mt-8 pt-6 border-t border-gray-100">
+            <p className="text-sm text-gray-500 text-center">
+              Don't have an account? Contact your administrator or{" "}
+              <a
+                href={`https://myaccount.asgardeo.io/t/${
+                  import.meta.env.VITE_ASGARDEO_BASE_URL?.split("/t/")[1] || "kubestock"
+                }/register`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-orange-600 hover:text-orange-700 font-medium"
               >
-                Sign Up
-              </Link>
+                sign up here
+              </a>
             </p>
           </div>
         </div>
-      </div>
 
-      <div className="mt-6 text-center text-sm text-dark-500">
-        <p>© 2025 Inventory Management System. All rights reserved.</p>
+        {/* Footer */}
+        <p className="text-center text-sm text-gray-400 mt-6">
+          Protected by WSO2 Asgardeo Identity Platform
+        </p>
       </div>
     </div>
   );

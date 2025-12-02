@@ -5,23 +5,14 @@ import Button from "../../components/common/Button";
 import Table from "../../components/common/Table";
 import Badge from "../../components/common/Badge";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
-import Input from "../../components/common/Input";
 import { supplierService } from "../../services/supplierService";
-import { FiPlus, FiEdit, FiTrash2, FiMail, FiPhone } from "react-icons/fi";
+import { useAuth } from "../../context/AsgardeoAuthContext";
+import { FiEdit, FiTrash2, FiMail, FiPhone, FiExternalLink, FiUserPlus } from "react-icons/fi";
 
 const SupplierList = () => {
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [editingSupplier, setEditingSupplier] = useState(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    contact_person: "",
-    email: "",
-    phone: "",
-    address: "",
-    status: "active",
-  });
+  const { openUserManagement } = useAuth();
 
   useEffect(() => {
     fetchSuppliers();
@@ -34,58 +25,10 @@ const SupplierList = () => {
       setSuppliers(response.data || []);
     } catch (error) {
       console.error("Error fetching suppliers:", error);
+      toast.error("Failed to load suppliers");
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      contact_person: "",
-      email: "",
-      phone: "",
-      address: "",
-      status: "active",
-    });
-    setEditingSupplier(null);
-    setShowAddModal(false);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      if (editingSupplier) {
-        await supplierService.updateSupplier(editingSupplier.id, formData);
-        toast.success("Supplier updated successfully!");
-      } else {
-        await supplierService.createSupplier(formData);
-        toast.success("Supplier created successfully!");
-      }
-      resetForm();
-      fetchSuppliers();
-    } catch (error) {
-      console.error("Error saving supplier:", error);
-      toast.error(error.response?.data?.message || "Failed to save supplier");
-    }
-  };
-
-  const handleEdit = (supplier) => {
-    setEditingSupplier(supplier);
-    setFormData({
-      name: supplier.name,
-      contact_person: supplier.contact_person,
-      email: supplier.email,
-      phone: supplier.phone,
-      address: supplier.address || "",
-      status: supplier.status,
-    });
-    setShowAddModal(true);
   };
 
   const handleDelete = async (id) => {
@@ -96,22 +39,21 @@ const SupplierList = () => {
         fetchSuppliers();
       } catch (error) {
         console.error("Error deleting supplier:", error);
-
-        // Handle different error responses
         if (error.response?.status === 409) {
-          toast.error(
-            error.response?.data?.message ||
-              "Cannot delete supplier with existing purchase orders"
-          );
-        } else if (error.response?.status === 404) {
-          toast.error("Supplier not found");
+          toast.error("Cannot delete supplier with existing purchase orders");
         } else {
-          toast.error(
-            error.response?.data?.message || "Failed to delete supplier"
-          );
+          toast.error(error.response?.data?.message || "Failed to delete supplier");
         }
       }
     }
+  };
+
+  const handleAddSupplier = () => {
+    // Open Asgardeo console for user management
+    openUserManagement();
+    toast.success("Opening Asgardeo User Management. Add a user and assign them to the 'supplier' group.", {
+      duration: 5000,
+    });
   };
 
   const columns = [
@@ -134,9 +76,9 @@ const SupplierList = () => {
       render: (row) => (
         <a
           href={`mailto:${row.email}`}
-          className="text-primary hover:underline flex items-center"
+          className="text-orange-600 hover:underline flex items-center gap-1"
         >
-          <FiMail className="mr-1" /> {row.email}
+          <FiMail className="w-4 h-4" /> {row.email}
         </a>
       ),
     },
@@ -144,8 +86,8 @@ const SupplierList = () => {
       header: "Phone",
       accessor: "phone",
       render: (row) => (
-        <span className="flex items-center">
-          <FiPhone className="mr-1" /> {row.phone}
+        <span className="flex items-center gap-1">
+          <FiPhone className="w-4 h-4" /> {row.phone || "-"}
         </span>
       ),
     },
@@ -163,11 +105,9 @@ const SupplierList = () => {
       accessor: "average_rating",
       render: (row) => (
         <div className="flex items-center gap-1">
-          <span className="text-yellow-400">★</span>
+          <span className="text-yellow-500">★</span>
           <span className="font-medium">
-            {row.average_rating
-              ? parseFloat(row.average_rating).toFixed(2)
-              : "N/A"}
+            {row.average_rating ? parseFloat(row.average_rating).toFixed(1) : "N/A"}
           </span>
           {row.total_ratings > 0 && (
             <span className="text-xs text-gray-500">({row.total_ratings})</span>
@@ -180,9 +120,6 @@ const SupplierList = () => {
       accessor: "actions",
       render: (row) => (
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => handleEdit(row)}>
-            <FiEdit className="mr-1" /> Edit
-          </Button>
           <Button
             size="sm"
             variant="danger"
@@ -200,104 +137,39 @@ const SupplierList = () => {
   }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-dark-900">
-          Suppliers Management
-        </h1>
-        <Button onClick={() => setShowAddModal(true)}>
-          <FiPlus className="mr-2" /> Add Supplier
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Suppliers</h1>
+          <p className="text-gray-500 mt-1">Manage your supplier network</p>
+        </div>
+        <Button onClick={handleAddSupplier} className="flex items-center gap-2">
+          <FiUserPlus className="w-4 h-4" />
+          Add Supplier
+          <FiExternalLink className="w-3 h-3" />
         </Button>
       </div>
 
-      <Card>
-        <div className="mb-4">
-          <p className="text-dark-600">
-            Total Suppliers:{" "}
-            <span className="font-semibold">{suppliers.length}</span>
-          </p>
-        </div>
-        <Table columns={columns} data={suppliers} />
-      </Card>
+      {/* Info Banner */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <p className="text-sm text-blue-800">
+          <strong>Note:</strong> Suppliers are managed through Asgardeo. To add a new supplier, 
+          click "Add Supplier" to open the Asgardeo console, create a user, and assign them to 
+          the <code className="bg-blue-100 px-1 rounded">supplier</code> group.
+        </p>
+      </div>
 
-      {/* Add/Edit Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <h2 className="text-2xl font-bold text-dark-900 mb-4">
-              {editingSupplier ? "Edit Supplier" : "Add New Supplier"}
-            </h2>
-            <form onSubmit={handleSubmit}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input
-                  label="Supplier Name *"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="Enter supplier name"
-                />
-                <Input
-                  label="Contact Person *"
-                  name="contact_person"
-                  value={formData.contact_person}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="Enter contact person"
-                />
-                <Input
-                  label="Email *"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="supplier@example.com"
-                />
-                <Input
-                  label="Phone *"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="+1234567890"
-                />
-                <div className="md:col-span-2">
-                  <Input
-                    label="Address"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    placeholder="Enter supplier address"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-dark-700 mb-2">
-                    Status
-                  </label>
-                  <select
-                    name="status"
-                    className="w-full px-3 py-2 border border-dark-300 rounded-lg"
-                    value={formData.status}
-                    onChange={handleInputChange}
-                  >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
-                </div>
-              </div>
-              <div className="flex gap-3 mt-6">
-                <Button type="button" variant="outline" onClick={resetForm}>
-                  Cancel
-                </Button>
-                <Button type="submit">
-                  {editingSupplier ? "Update Supplier" : "Create Supplier"}
-                </Button>
-              </div>
-            </form>
+      <Card>
+        <Table columns={columns} data={suppliers} />
+        {suppliers.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-500">No suppliers found</p>
+            <Button onClick={handleAddSupplier} className="mt-4">
+              Add Your First Supplier
+            </Button>
           </div>
-        </div>
-      )}
+        )}
+      </Card>
     </div>
   );
 };

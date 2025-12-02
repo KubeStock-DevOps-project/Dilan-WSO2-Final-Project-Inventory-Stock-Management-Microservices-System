@@ -1,10 +1,9 @@
-import { Menu, Bell, LogOut, User } from "lucide-react";
+import { Menu, Bell, LogOut, User, ExternalLink } from "lucide-react";
 import { useAuth } from "../../context/AsgardeoAuthContext";
 import { useState } from "react";
-import { Link } from "react-router-dom";
 
 const Navbar = ({ toggleSidebar }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, openMyAccount } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
 
   return (
@@ -53,14 +52,17 @@ const Navbar = ({ toggleSidebar }) => {
             {/* Dropdown Menu */}
             {showDropdown && (
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-dark-200 py-1 z-50">
-                <Link
-                  to="/profile"
-                  className="flex items-center px-4 py-2 text-sm text-dark-700 hover:bg-dark-50"
-                  onClick={() => setShowDropdown(false)}
+                <button
+                  onClick={() => {
+                    setShowDropdown(false);
+                    openMyAccount();
+                  }}
+                  className="flex items-center w-full px-4 py-2 text-sm text-dark-700 hover:bg-dark-50"
                 >
                   <User size={16} className="mr-2" />
-                  Profile
-                </Link>
+                  My Account
+                  <ExternalLink size={12} className="ml-auto text-dark-400" />
+                </button>
                 <button
                   onClick={() => {
                     setShowDropdown(false);

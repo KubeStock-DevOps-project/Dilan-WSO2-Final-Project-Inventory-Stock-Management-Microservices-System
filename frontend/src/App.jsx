@@ -1,9 +1,4 @@
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider as AsgardeoAuthProvider } from "@asgardeo/auth-react";
 import { AuthProvider } from "./context/AsgardeoAuthContext";
@@ -12,14 +7,10 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import RootRedirect from "./components/auth/RootRedirect";
 
 // Layouts
-import AuthLayout from "./layouts/AuthLayout";
 import DashboardLayout from "./layouts/DashboardLayout";
 
-// Auth Pages
+// Auth Pages (simplified - only Login needed, Asgardeo handles the rest)
 import Login from "./pages/auth/Login";
-import Register from "./pages/auth/Register";
-import ForgotPassword from "./pages/auth/ForgotPassword";
-import Callback from "./pages/auth/Callback";
 
 // Dashboard Pages
 import AdminDashboard from "./pages/dashboards/AdminDashboard";
@@ -44,7 +35,6 @@ import LowStockAlerts from "./pages/inventory/LowStockAlerts";
 import SupplierList from "./pages/suppliers/SupplierList";
 import PurchaseOrders from "./pages/suppliers/PurchaseOrders";
 import PurchaseRequests from "./pages/suppliers/PurchaseRequests";
-import SupplierProfile from "./pages/suppliers/SupplierProfile";
 
 // Order Pages
 import OrderList from "./pages/orders/OrderList";
@@ -55,8 +45,6 @@ import OrderCreate from "./pages/orders/OrderCreate";
 import HealthMonitoring from "./pages/system/HealthMonitoring";
 import NotFound from "./pages/NotFound";
 
-console.log("🚀 App.jsx - Initializing Asgardeo with config:", asgardeoConfig);
-
 function App() {
   return (
     <AsgardeoAuthProvider config={asgardeoConfig}>
@@ -66,37 +54,16 @@ function App() {
             position="top-right"
             toastOptions={{
               duration: 4000,
-              style: {
-                background: "#363636",
-                color: "#fff",
-              },
-              success: {
-                duration: 3000,
-                iconTheme: {
-                  primary: "#F97316",
-                  secondary: "#fff",
-                },
-              },
-              error: {
-                duration: 4000,
-                iconTheme: {
-                  primary: "#EF4444",
-                  secondary: "#fff",
-                },
-              },
+              style: { background: "#363636", color: "#fff" },
+              success: { duration: 3000 },
             }}
           />
 
           <Routes>
-            {/* Public Routes */}
-            <Route element={<AuthLayout />}>
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/callback" element={<Callback />} />
-            </Route>
+            {/* Login - redirects to Asgardeo */}
+            <Route path="/login" element={<Login />} />
 
-            {/* Protected Routes */}
+            {/* Protected Dashboard Routes */}
             <Route
               element={
                 <ProtectedRoute>
@@ -104,7 +71,7 @@ function App() {
                 </ProtectedRoute>
               }
             >
-              {/* Dashboard Routes */}
+              {/* Dashboards */}
               <Route
                 path="/dashboard/admin"
                 element={
@@ -130,7 +97,7 @@ function App() {
                 }
               />
 
-              {/* Product Routes */}
+              {/* Products */}
               <Route
                 path="/products"
                 element={
@@ -180,7 +147,7 @@ function App() {
                 }
               />
 
-              {/* Inventory Routes */}
+              {/* Inventory */}
               <Route
                 path="/inventory"
                 element={
@@ -214,7 +181,7 @@ function App() {
                 }
               />
 
-              {/* Supplier Routes */}
+              {/* Suppliers */}
               <Route
                 path="/suppliers"
                 element={
@@ -239,16 +206,8 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route
-                path="/supplier-profile"
-                element={
-                  <ProtectedRoute allowedRoles={["supplier"]}>
-                    <SupplierProfile />
-                  </ProtectedRoute>
-                }
-              />
 
-              {/* Order Routes */}
+              {/* Orders */}
               <Route
                 path="/orders"
                 element={
@@ -274,7 +233,7 @@ function App() {
                 }
               />
 
-              {/* System Routes */}
+              {/* System */}
               <Route
                 path="/health"
                 element={
@@ -285,8 +244,10 @@ function App() {
               />
             </Route>
 
-            {/* Redirects */}
+            {/* Root redirect based on auth state */}
             <Route path="/" element={<RootRedirect />} />
+            
+            {/* 404 */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
