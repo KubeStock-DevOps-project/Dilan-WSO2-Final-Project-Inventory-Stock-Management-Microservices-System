@@ -32,30 +32,30 @@ async function findSupplierByEmail(email) {
 }
 
 /**
- * Find supplier by legacy user_id (for backward compatibility)
- * @param {number} userId - Legacy user ID
+ * Find supplier by Asgardeo subject ID
+ * @param {string} asgardeoSub - Asgardeo subject ID
  * @returns {Promise<Object|null>} Supplier object or null
  */
-async function findSupplierByUserId(userId) {
+async function findSupplierByAsgardeoSub(asgardeoSub) {
   try {
     const result = await supplierPool.query(
-      "SELECT id, name, email, is_active FROM suppliers WHERE user_id = $1",
-      [userId]
+      "SELECT id, name, email, is_active FROM suppliers WHERE asgardeo_sub = $1",
+      [asgardeoSub]
     );
     return result.rows[0] || null;
   } catch (error) {
-    logger.error("Error finding supplier by user_id:", error);
+    logger.error("Error finding supplier by asgardeo_sub:", error);
     throw error;
   }
 }
 
 /**
- * Get supplier ID from authenticated user (supports both Asgardeo and legacy auth)
+ * Get supplier ID from authenticated user
  * @param {Object} user - req.user object from authentication middleware
  * @returns {Promise<number|null>} Supplier database ID or null
  */
 async function getSupplierIdFromUser(user) {
-  // Try email-based lookup first (for Asgardeo users)
+  // Try email-based lookup first (primary method)
   const userEmail = user.email || user.username;
   if (userEmail) {
     const supplier = await findSupplierByEmail(userEmail);
@@ -69,10 +69,10 @@ async function getSupplierIdFromUser(user) {
     }
   }
 
-  // Fallback to user_id lookup (for legacy users)
-  const userId = user.id;
-  if (userId && typeof userId === "number") {
-    const supplier = await findSupplierByUserId(userId);
+  // Fallback to asgardeo_sub lookup
+  const asgardeoSub = user.sub;
+  if (asgardeoSub) {
+    const supplier = await findSupplierByAsgardeoSub(asgardeoSub);
     if (supplier) {
       if (!supplier.is_active) {
         const error = new Error("Supplier account is not active");
@@ -91,7 +91,7 @@ async function getSupplierIdFromUser(user) {
 
 module.exports = {
   findSupplierByEmail,
-  findSupplierByUserId,
+  findSupplierByAsgardeoSub,
   getSupplierIdFromUser,
   supplierPool,
 };

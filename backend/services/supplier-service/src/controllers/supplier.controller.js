@@ -210,20 +210,20 @@ class SupplierController {
   // Get current supplier's profile (for supplier role)
   async getMyProfile(req, res) {
     try {
-      // For Asgardeo users, use email; for legacy users, use user_id
+      // Use email from Asgardeo token to find supplier
       const userEmail = req.user.email || req.user.username;
-      const userId = req.user.id;
+      const asgardeoSub = req.user.sub;
 
       let supplier;
 
-      // Try finding by email first (for Asgardeo users)
+      // Try finding by email first (primary method)
       if (userEmail) {
         supplier = await Supplier.findByEmail(userEmail);
       }
 
-      // Fallback to user_id if email lookup failed (for legacy users)
-      if (!supplier && userId) {
-        supplier = await Supplier.findByUserId(userId);
+      // Fallback to asgardeo_sub if email lookup failed
+      if (!supplier && asgardeoSub) {
+        supplier = await Supplier.findByAsgardeoSub(asgardeoSub);
       }
 
       if (!supplier) {
@@ -250,21 +250,21 @@ class SupplierController {
   // Update supplier profile (for supplier role)
   async updateMyProfile(req, res) {
     try {
-      // For Asgardeo users, use email; for legacy users, use user_id
+      // Use email from Asgardeo token to find supplier
       const userEmail = req.user.email || req.user.username;
-      const userId = req.user.id;
+      const asgardeoSub = req.user.sub;
       const allowedFields = ["contact_person", "email", "phone", "address"];
 
       let supplier;
 
-      // Try finding by email first (for Asgardeo users)
+      // Try finding by email first (primary method)
       if (userEmail) {
         supplier = await Supplier.findByEmail(userEmail);
       }
 
-      // Fallback to user_id if email lookup failed (for legacy users)
-      if (!supplier && userId) {
-        supplier = await Supplier.findByUserId(userId);
+      // Fallback to asgardeo_sub if email lookup failed
+      if (!supplier && asgardeoSub) {
+        supplier = await Supplier.findByAsgardeoSub(asgardeoSub);
       }
 
       if (!supplier) {
@@ -291,7 +291,7 @@ class SupplierController {
       const updatedSupplier = await Supplier.update(supplier.id, updateData);
 
       logger.info(
-        `Supplier ${supplier.id} (user ${userId}) updated their profile`
+        `Supplier ${supplier.id} (${userEmail}) updated their profile`
       );
 
       res.json({

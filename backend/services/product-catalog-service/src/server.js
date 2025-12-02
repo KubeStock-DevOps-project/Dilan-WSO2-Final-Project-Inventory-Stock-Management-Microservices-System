@@ -11,15 +11,23 @@ const {
   updateDbMetrics,
 } = require("./middlewares/metrics");
 const pool = require("./config/database");
+const { runMigrations } = require("./config/migrationRunner");
 const categoryRoutes = require("./routes/category.routes");
 const productRoutes = require("./routes/product.routes");
 const pricingRoutes = require("./routes/pricing.routes");
 const productLifecycleRoutes = require("./routes/productLifecycle.routes");
-// Product rating removed - illogical for suppliers to rate products
-// const productRatingRoutes = require("./routes/productRating.routes");
 
 const app = express();
 const PORT = process.env.PORT || 3002;
+
+// Database configuration for migrations
+const dbConfig = {
+  host: process.env.DB_HOST || "localhost",
+  port: process.env.DB_PORT || 5432,
+  database: process.env.DB_NAME || "product_catalog_db",
+  user: process.env.DB_USER || "postgres",
+  password: process.env.DB_PASSWORD || "postgres",
+};
 
 // Update database metrics every 30 seconds
 setInterval(() => {
@@ -72,8 +80,6 @@ app.get("/metrics", async (req, res) => {
 // Business Logic Routes (Production-Grade Features)
 app.use("/api/pricing", pricingRoutes);
 app.use("/api/products", productLifecycleRoutes);
-// Product rating removed - will be replaced with supplier rating system
-// app.use("/api/products", productRatingRoutes);
 
 // Standard CRUD Routes
 app.use("/api/categories", categoryRoutes);
@@ -89,32 +95,45 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 const HOST = process.env.HOST || '127.0.0.1';
-const server = app.listen(PORT, HOST, () => {
-  logger.info(`Product Catalog Service running on http://${HOST}:${PORT}`);
-  logger.info(`Environment: ${process.env.NODE_ENV}`);
-  logger.info(`Metrics available at http://${HOST}:${PORT}/metrics`);
-});
 
-// Graceful shutdown
-const gracefulShutdown = (signal) => {
-  logger.info(`${signal} received. Starting graceful shutdown...`);
+// Start server after migrations
+const startServer = async () => {
+  try {
+    await runMigrations(dbConfig, logger);
+  } catch (error) {
+    logger.error("Migration failed:", error);
+    process.exit(1);
+  }
 
-  server.close(() => {
-    logger.info("HTTP server closed");
-
-    pool.end(() => {
-      logger.info("Database connections closed");
-      process.exit(0);
-    });
+  const server = app.listen(PORT, HOST, () => {
+    logger.info(`Product Catalog Service running on http://${HOST}:${PORT}`);
+    logger.info(`Environment: ${process.env.NODE_ENV}`);
+    logger.info(`Metrics available at http://${HOST}:${PORT}/metrics`);
   });
 
-  setTimeout(() => {
-    logger.error("Forced shutdown after timeout");
-    process.exit(1);
-  }, 30000);
+  // Graceful shutdown
+  const gracefulShutdown = (signal) => {
+    logger.info(`${signal} received. Starting graceful shutdown...`);
+
+    server.close(() => {
+      logger.info("HTTP server closed");
+
+      pool.end(() => {
+        logger.info("Database connections closed");
+        process.exit(0);
+      });
+    });
+
+    setTimeout(() => {
+      logger.error("Forced shutdown after timeout");
+      process.exit(1);
+    }, 30000);
+  };
+
+  process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+  process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 };
 
-process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
-process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+startServer();
 
 module.exports = app;

@@ -4,6 +4,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 const db = require("./config/database");
 const logger = require("./config/logger");
+const { runMigrations } = require("./config/migrationRunner");
 const {
   metricsMiddleware,
   getMetrics,
@@ -20,6 +21,15 @@ const {
 
 const app = express();
 const PORT = process.env.PORT || 3004;
+
+// Database configuration for migrations
+const dbConfig = {
+  host: process.env.DB_HOST || "localhost",
+  port: process.env.DB_PORT || 5432,
+  database: process.env.DB_NAME || "supplier_db",
+  user: process.env.DB_USER || "postgres",
+  password: process.env.DB_PASSWORD || "postgres",
+};
 
 setInterval(() => {
   updateDbMetrics(db.pool);
@@ -66,27 +76,40 @@ app.use((req, res) => {
 });
 
 const HOST = process.env.HOST || '127.0.0.1';
-const server = app.listen(PORT, HOST, () => {
-  logger.info(`Supplier Service running on http://${HOST}:${PORT}`);
-  logger.info(`Metrics available at http://${HOST}:${PORT}/metrics`);
-});
 
-const gracefulShutdown = (signal) => {
-  logger.info(`${signal} received. Starting graceful shutdown...`);
-  server.close(() => {
-    logger.info("HTTP server closed");
-    db.end(() => {
-      logger.info("Database connections closed");
-      process.exit(0);
-    });
-  });
-  setTimeout(() => {
-    logger.error("Forced shutdown after timeout");
+// Start server after migrations
+const startServer = async () => {
+  try {
+    await runMigrations(dbConfig, logger);
+  } catch (error) {
+    logger.error("Migration failed:", error);
     process.exit(1);
-  }, 30000);
+  }
+
+  const server = app.listen(PORT, HOST, () => {
+    logger.info(`Supplier Service running on http://${HOST}:${PORT}`);
+    logger.info(`Metrics available at http://${HOST}:${PORT}/metrics`);
+  });
+
+  const gracefulShutdown = (signal) => {
+    logger.info(`${signal} received. Starting graceful shutdown...`);
+    server.close(() => {
+      logger.info("HTTP server closed");
+      db.pool.end(() => {
+        logger.info("Database connections closed");
+        process.exit(0);
+      });
+    });
+    setTimeout(() => {
+      logger.error("Forced shutdown after timeout");
+      process.exit(1);
+    }, 30000);
+  };
+
+  process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+  process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 };
 
-process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
-process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+startServer();
 
 module.exports = app;

@@ -1,7 +1,11 @@
 const { body } = require("express-validator");
 
 exports.validateCreateOrder = [
-  body("user_id").isInt().withMessage("User ID must be an integer"),
+  body("customer_id")
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage("Customer ID must be a non-empty string (Asgardeo sub or email)"),
   body("customer_name")
     .trim()
     .notEmpty()

@@ -1,4 +1,4 @@
-cd/**
+/**
  * Token Decoder Middleware for Local Development
  * 
  * In production, Istio sidecar validates JWT tokens.
