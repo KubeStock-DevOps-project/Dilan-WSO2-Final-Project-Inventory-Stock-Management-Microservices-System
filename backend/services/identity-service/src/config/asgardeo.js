@@ -49,8 +49,7 @@ class AsgardeoClient {
                 this.tokenUrl,
                 new URLSearchParams({
                     grant_type: "client_credentials",
-                    scope: "internal_user_mgt_create internal_user_mgt_list internal_user_mgt_view internal_user_mgt_delete internal_user_mgt_update internal_group_mgt_delete internal_group_mgt_create internal_group_mgt_update internal_group_mgt_view",
-                }),
+                    scope: "internal_user_mgt_create internal_user_mgt_list internal_user_mgt_view internal_user_mgt_delete internal_user_mgt_update internal_group_mgt_update internal_group_mgt_view"}),
                 {
                     headers: {
                         "Content-Type": "application/x-www-form-urlencoded",

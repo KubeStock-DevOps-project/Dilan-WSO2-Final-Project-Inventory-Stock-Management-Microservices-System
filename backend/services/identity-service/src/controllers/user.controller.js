@@ -235,11 +235,28 @@ const createWarehouseStaff = async (req, res) => {
 };
 
 /**
- * Delete a user (supplier or warehouse staff)
+ * Delete a user (supplier or warehouse staff only - admins cannot be deleted)
  */
 const deleteUser = async (req, res) => {
   try {
     const { userId } = req.params;
+    
+    // First, fetch the user to check their group membership
+    logger.info(`Fetching user ${userId} to verify group membership`);
+    const scimUser = await asgardeoClient.getUser(userId);
+    
+    // Check if user is in admin group - prevent deletion
+    const adminGroupId = asgardeoClient.groupIds.admin;
+    const userGroups = scimUser.groups || [];
+    const isAdmin = userGroups.some(g => g.value === adminGroupId || g.display?.toLowerCase().includes('admin'));
+    
+    if (isAdmin) {
+      logger.warn(`Attempted to delete admin user ${userId} - operation denied`);
+      return res.status(403).json({
+        success: false,
+        message: "Cannot delete admin users. Admin group members are protected.",
+      });
+    }
     
     logger.info(`Deleting user ${userId} from Asgardeo`);
     await asgardeoClient.deleteUser(userId);
@@ -266,18 +283,23 @@ const deleteUser = async (req, res) => {
 };
 
 /**
- * List all groups
+ * List manageable groups (excludes admin group)
  */
 const listGroups = async (req, res) => {
   try {
     logger.info("Fetching groups from Asgardeo");
     
     const response = await asgardeoClient.listGroups();
-    const groups = response.Resources?.map(g => ({
-      id: g.id,
-      name: g.displayName?.replace("DEFAULT/", ""),
-      memberCount: g.members?.length || 0,
-    })) || [];
+    const adminGroupId = asgardeoClient.groupIds.admin;
+    
+    // Filter out admin group - admins cannot manage admin group
+    const groups = response.Resources
+      ?.filter(g => g.id !== adminGroupId && !g.displayName?.toLowerCase().includes('admin'))
+      .map(g => ({
+        id: g.id,
+        name: g.displayName?.replace("DEFAULT/", ""),
+        memberCount: g.members?.length || 0,
+      })) || [];
     
     res.json({
       success: true,
