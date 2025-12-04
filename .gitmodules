@@ -17,3 +17,6 @@
 [submodule "modules/ms-identity"]
 	path = modules/ms-identity
 	url = https://github.com/KubeStock-DevOps-project/ms-identity.git
+[submodule "frontend"]
+	path = frontend
+	url = https://github.com/KubeStock-DevOps-project/kubestock-frontend.git
