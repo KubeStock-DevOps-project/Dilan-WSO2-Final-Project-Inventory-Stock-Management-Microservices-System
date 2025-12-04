@@ -50,8 +50,12 @@ services:
     environment:
       NODE_ENV: development
       PORT: 3002
-      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/product_catalog_db
-      # Inter-service URLs
+      HOST: 0.0.0.0
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: product_catalog_db
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       INVENTORY_SERVICE_URL: http://ms-inventory:3003
     ports:
       - "3002:3002"
@@ -82,7 +86,12 @@ services:
     environment:
       NODE_ENV: development
       PORT: 3003
-      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/inventory_db
+      HOST: 0.0.0.0
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: inventory_db
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       # Inter-service URLs
       PRODUCT_CATALOG_SERVICE_URL: http://ms-product:3002
     ports:
@@ -116,7 +125,12 @@ services:
     environment:
       NODE_ENV: development
       PORT: 3004
-      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/supplier_db
+      HOST: 0.0.0.0
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: supplier_db
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       # Inter-service URLs
       PRODUCT_CATALOG_SERVICE_URL: http://ms-product:3002
       INVENTORY_SERVICE_URL: http://ms-inventory:3003
@@ -153,7 +167,12 @@ services:
     environment:
       NODE_ENV: development
       PORT: 3005
-      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/order_db
+      HOST: 0.0.0.0
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: order_db
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       # Inter-service URLs
       PRODUCT_CATALOG_SERVICE_URL: http://ms-product:3002
       INVENTORY_SERVICE_URL: http://ms-inventory:3003
@@ -190,6 +209,7 @@ services:
     environment:
       NODE_ENV: development
       PORT: 3006
+      HOST: 0.0.0.0
       # Asgardeo OIDC Configuration (Machine-to-Machine)
       ASGARDEO_ORG_NAME: ${ASGARDEO_ORG_NAME:-kubestock}
       ASGARDEO_BASE_URL: ${ASGARDEO_BASE_URL:-https://api.asgardeo.io/t/kubestock}
