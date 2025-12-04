@@ -20,3 +20,9 @@
 [submodule "frontend"]
 	path = frontend
 	url = https://github.com/KubeStock-DevOps-project/kubestock-frontend.git
+[submodule "infrastructure"]
+	path = infrastructure
+	url = https://github.com/KubeStock-DevOps-project/kubestock-infrastructure.git
+[submodule "gitops"]
+	path = gitops
+	url = https://github.com/KubeStock-DevOps-project/kubestock-gitops.git
