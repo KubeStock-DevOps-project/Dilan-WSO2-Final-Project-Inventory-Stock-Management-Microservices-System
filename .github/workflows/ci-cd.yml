@@ -10,7 +10,6 @@ on:
   push:
     branches:
       - main
-      - develop
   workflow_dispatch:
 
 env:
@@ -87,10 +86,8 @@ jobs:
         run: |
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             echo "environment=production" >> $GITHUB_OUTPUT
-          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
-            echo "environment=staging" >> $GITHUB_OUTPUT
           else
-            echo "environment=development" >> $GITHUB_OUTPUT
+            echo "environment=staging" >> $GITHUB_OUTPUT
           fi
 
   # ═══════════════════════════════════════════════════════════════

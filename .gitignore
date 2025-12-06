@@ -44,6 +44,9 @@ build/
 coverage/
 .nyc_output/
 
+# Turborepo
+.turbo/
+
 # Temporary files
 tmp/
 temp/
