@@ -12,10 +12,10 @@ CREATE DATABASE supplier_db;
 CREATE DATABASE order_db;
 
 -- Grant privileges
-GRANT ALL PRIVILEGES ON DATABASE product_catalog_db TO postgres;
-GRANT ALL PRIVILEGES ON DATABASE inventory_db TO postgres;
-GRANT ALL PRIVILEGES ON DATABASE supplier_db TO postgres;
-GRANT ALL PRIVILEGES ON DATABASE order_db TO postgres;
+GRANT ALL PRIVILEGES ON DATABASE product_catalog_db TO kubestock_admin;
+GRANT ALL PRIVILEGES ON DATABASE inventory_db TO kubestock_admin;
+GRANT ALL PRIVILEGES ON DATABASE supplier_db TO kubestock_admin;
+GRANT ALL PRIVILEGES ON DATABASE order_db TO kubestock_admin;
 
 -- Add uuid-ossp extension to each database
 \c product_catalog_db;
