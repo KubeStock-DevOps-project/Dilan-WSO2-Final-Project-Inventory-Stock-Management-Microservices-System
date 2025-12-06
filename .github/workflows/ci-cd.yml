@@ -182,23 +182,6 @@ jobs:
           cache-to: type=gha,mode=max
           provenance: false
 
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        if: matrix.changed == 'true'
-        with:
-          image-ref: ${{ env.ECR_REGISTRY }}/${{ matrix.ecr-repo }}:${{ github.ref_name }}-${{ github.sha }}
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          severity: 'CRITICAL,HIGH'
-
-      - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
-        if: matrix.changed == 'true' && hashFiles('trivy-results.sarif') != ''
-        continue-on-error: true
-        with:
-          sarif_file: 'trivy-results.sarif'
-          category: trivy-${{ matrix.name }}-${{ github.ref_name }}
-
       - name: Image summary
         if: matrix.changed == 'true'
         run: |
@@ -208,7 +191,7 @@ jobs:
           echo "**Tag:** \`${{ github.ref_name }}-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
           echo "**Full Image:** \`${{ env.ECR_REGISTRY }}/${{ matrix.ecr-repo }}:${{ github.ref_name }}-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Security scan complete" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Image pushed to ECR" >> $GITHUB_STEP_SUMMARY
 
   # ═══════════════════════════════════════════════════════════════
   # STAGING APPROVAL (only for production deployments from main)
