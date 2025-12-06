@@ -231,28 +231,22 @@ jobs:
         include:
           - name: ms-product
             changed: ${{ needs.detect-changes.outputs.ms-product }}
-            kustomize-path: gitops/overlays/${{ needs.detect-changes.outputs.environment }}/ms-product
-            image-path: kubestock/ms-product
+            image-name: kubestock/ms-product
           - name: ms-inventory
             changed: ${{ needs.detect-changes.outputs.ms-inventory }}
-            kustomize-path: gitops/overlays/${{ needs.detect-changes.outputs.environment }}/ms-inventory
-            image-path: kubestock/ms-inventory
+            image-name: kubestock/ms-inventory
           - name: ms-supplier
             changed: ${{ needs.detect-changes.outputs.ms-supplier }}
-            kustomize-path: gitops/overlays/${{ needs.detect-changes.outputs.environment }}/ms-supplier
-            image-path: kubestock/ms-supplier
+            image-name: kubestock/ms-supplier
           - name: ms-order-management
             changed: ${{ needs.detect-changes.outputs.ms-order-management }}
-            kustomize-path: gitops/overlays/${{ needs.detect-changes.outputs.environment }}/ms-order-management
-            image-path: kubestock/ms-order-management
+            image-name: kubestock/ms-order-management
           - name: ms-identity
             changed: ${{ needs.detect-changes.outputs.ms-identity }}
-            kustomize-path: gitops/overlays/${{ needs.detect-changes.outputs.environment }}/ms-identity
-            image-path: kubestock/ms-identity
+            image-name: kubestock/ms-identity
           - name: web
             changed: ${{ needs.detect-changes.outputs.web }}
-            kustomize-path: gitops/overlays/${{ needs.detect-changes.outputs.environment }}/web
-            image-path: kubestock/web
+            image-name: kubestock/web
 
     steps:
       - name: Checkout GitOps repository
@@ -262,28 +256,28 @@ jobs:
           repository: ${{ env.GITOPS_REPO }}
           ref: ${{ env.GITOPS_BRANCH }}
           token: ${{ secrets.GITOPS_REPO_TOKEN }}
-          path: gitops-repo
 
-      - name: Setup Kustomize
+      - name: Update image tag in kustomization
         if: matrix.changed == 'true'
         run: |
-          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
-          sudo mv kustomize /usr/local/bin/
-
-      - name: Update image tag
-        if: matrix.changed == 'true'
-        run: |
-          cd gitops-repo/${{ matrix.kustomize-path }}
-          kustomize edit set image ${{ matrix.image-path }}=${{ env.ECR_REGISTRY }}/${{ matrix.image-path }}:${{ github.ref_name }}-${{ github.sha }}
+          OVERLAY_PATH="overlays/${{ needs.detect-changes.outputs.environment }}/kustomization.yaml"
+          IMAGE_TAG="${{ github.ref_name }}-${{ github.sha }}"
+          IMAGE_FULL="${{ env.ECR_REGISTRY }}/${{ matrix.image-name }}"
+          
+          echo "Updating ${{ matrix.image-name }} to tag: $IMAGE_TAG"
+          
+          # Update the newTag for the specific image
+          sed -i "/name: .*\/${{ matrix.image-name }}/,/newTag:/s|newTag: .*|newTag: $IMAGE_TAG|" "$OVERLAY_PATH"
+          
+          cat "$OVERLAY_PATH"
 
       - name: Commit and push changes
         if: matrix.changed == 'true'
         run: |
-          cd gitops-repo
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit -m "Update ${{ matrix.name }} image tag to ${{ github.ref_name }}-${{ github.sha }}" || echo "No changes to commit"
+          git commit -m "🚀 Update ${{ matrix.name }} to ${{ github.ref_name }}-${{ github.sha }}" || echo "No changes to commit"
           git push
 
       - name: GitOps summary
@@ -292,8 +286,8 @@ jobs:
           echo "## 📝 ${{ matrix.name }} - GitOps Updated" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Environment:** \`${{ needs.detect-changes.outputs.environment }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Kustomize Path:** \`${{ matrix.kustomize-path }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**New Image Tag:** \`${{ github.ref_name }}-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** \`${{ matrix.image-name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**New Tag:** \`${{ github.ref_name }}-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "✅ ArgoCD will sync automatically" >> $GITHUB_STEP_SUMMARY
 

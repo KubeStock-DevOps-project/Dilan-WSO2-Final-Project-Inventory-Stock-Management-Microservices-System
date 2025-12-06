@@ -294,21 +294,20 @@ jobs:
       - name: Update all service image tags
         run: |
           SERVICES=("ms-product" "ms-inventory" "ms-supplier" "ms-order-management" "ms-identity" "web")
+          OVERLAY="${{ github.event.inputs.environment }}"
+          KUSTOMIZATION="overlays/$OVERLAY/kustomization.yaml"
+          IMAGE_TAG="${{ github.sha }}"
+          
+          echo "Updating all services in $OVERLAY to $IMAGE_TAG"
           
           for SERVICE in "${SERVICES[@]}"; do
-            echo "Updating $SERVICE to ${{ github.sha }}"
-            
-            # Update in base kustomization
-            if [ -f "base/services/$SERVICE/kustomization.yaml" ]; then
-              sed -i "s|newTag: .*|newTag: ${{ github.sha }}|g" "base/services/$SERVICE/kustomization.yaml"
-            fi
-            
-            # Update in overlay (staging or production)
-            OVERLAY="${{ github.event.inputs.environment }}"
-            if [ -f "overlays/$OVERLAY/$SERVICE/kustomization.yaml" ]; then
-              sed -i "s|newTag: .*|newTag: ${{ github.sha }}|g" "overlays/$OVERLAY/$SERVICE/kustomization.yaml"
-            fi
+            echo "Updating kubestock/$SERVICE to $IMAGE_TAG"
+            # Update the newTag for each service image
+            sed -i "/name: .*\/kubestock\/$SERVICE/,/newTag:/s|newTag: .*|newTag: $IMAGE_TAG|" "$KUSTOMIZATION"
           done
+          
+          echo "Updated kustomization.yaml:"
+          cat "$KUSTOMIZATION"
       
       - name: Commit and push changes
         run: |
