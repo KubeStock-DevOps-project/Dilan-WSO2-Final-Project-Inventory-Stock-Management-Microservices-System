@@ -2,6 +2,7 @@
 # KubeStock Monorepo - Manual Full Pipeline
 # =============================================================================
 # Manually triggered: Runs ALL checks + CI/CD for ALL services regardless of changes
+# Flow: Lint/Test/Security → Build ALL → Deploy Staging → Approval → Deploy Production
 # =============================================================================
 
 name: Manual Full Pipeline
@@ -9,14 +10,11 @@ name: Manual Full Pipeline
 on:
   workflow_dispatch:
     inputs:
-      environment:
-        description: 'Target environment'
-        required: true
-        default: 'staging'
-        type: choice
-        options:
-          - staging
-          - production
+      skip_approval:
+        description: 'Skip staging and deploy directly to production (emergency use only)'
+        required: false
+        default: false
+        type: boolean
 
 env:
   NODE_VERSION: '18'
@@ -276,12 +274,16 @@ jobs:
           echo "**Tags:** \`${{ github.sha }}\`, \`${{ github.ref_name }}\`, \`latest\`" >> $GITHUB_STEP_SUMMARY
 
   # ═══════════════════════════════════════════════════════════════
-  # UPDATE GITOPS REPO (ALL SERVICES)
+  # DEPLOY TO STAGING (ALL SERVICES)
   # ═══════════════════════════════════════════════════════════════
-  update-gitops:
-    name: Update GitOps ALL
+  deploy-staging:
+    name: Deploy to Staging
     runs-on: ubuntu-latest
     needs: [build-and-push]
+    if: ${{ github.event.inputs.skip_approval != 'true' }}
+    environment:
+      name: staging
+      url: http://staging.kubestock.internal
     
     steps:
       - name: Checkout GitOps repo
@@ -291,47 +293,129 @@ jobs:
           ref: ${{ env.GITOPS_BRANCH }}
           token: ${{ secrets.GITOPS_REPO_TOKEN }}
       
-      - name: Update all service image tags
+      - name: Update staging image tags
         run: |
           SERVICES=("ms-product" "ms-inventory" "ms-supplier" "ms-order-management" "ms-identity" "web")
-          OVERLAY="${{ github.event.inputs.environment }}"
-          KUSTOMIZATION="overlays/$OVERLAY/kustomization.yaml"
+          KUSTOMIZATION="overlays/staging/kustomization.yaml"
           IMAGE_TAG="${{ github.sha }}"
           
-          echo "Updating all services in $OVERLAY to $IMAGE_TAG"
+          echo "Updating all services in staging to $IMAGE_TAG"
           
           for SERVICE in "${SERVICES[@]}"; do
             echo "Updating kubestock/$SERVICE to $IMAGE_TAG"
-            # Update the newTag for each service image
             sed -i "/name: .*\/kubestock\/$SERVICE/,/newTag:/s|newTag: .*|newTag: $IMAGE_TAG|" "$KUSTOMIZATION"
           done
           
           echo "Updated kustomization.yaml:"
           cat "$KUSTOMIZATION"
       
-      - name: Commit and push changes
+      - name: Commit and push staging changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit -m "🚀 Manual deployment: Update ALL services to ${{ github.sha }}
+          git commit -m "🚀 Manual deploy to staging: ALL services to ${{ github.sha }}
           
           Triggered by: @${{ github.actor }}
-          Environment: ${{ github.event.inputs.environment }}
-          Commit: ${{ github.sha }}
-          Workflow: ${{ github.workflow }} #${{ github.run_number }}"
+          Workflow: ${{ github.workflow }} #${{ github.run_number }}" || echo "No changes"
           git push
       
-      - name: Deployment summary
+      - name: Staging deployment summary
         run: |
-          echo "### ✅ GitOps Updated - ALL Services" >> $GITHUB_STEP_SUMMARY
-          echo "**Repository:** ${{ env.GITOPS_REPO }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Branch:** ${{ env.GITOPS_BRANCH }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Environment:** ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Image Tag:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Triggered by:** @${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "## 🎭 Deployed to Staging" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "ArgoCD will sync the changes automatically." >> $GITHUB_STEP_SUMMARY
+          echo "**Image Tag:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Services:** ALL" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⏳ **Review in staging before approving production deployment.**" >> $GITHUB_STEP_SUMMARY
+
+  # ═══════════════════════════════════════════════════════════════
+  # PRODUCTION APPROVAL
+  # ═══════════════════════════════════════════════════════════════
+  production-approval:
+    name: Approve Production Deployment
+    needs: [deploy-staging]
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.skip_approval != 'true' }}
+    environment:
+      name: production
+      url: https://kubestock.dpiyumal.me
+    
+    steps:
+      - name: Production approval granted
+        run: |
+          echo "## ✅ Production Deployment Approved" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Approved by: @${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "Proceeding to deploy ALL services to production..." >> $GITHUB_STEP_SUMMARY
+
+  # ═══════════════════════════════════════════════════════════════
+  # DEPLOY TO PRODUCTION (ALL SERVICES)
+  # ═══════════════════════════════════════════════════════════════
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build-and-push, production-approval]
+    if: |
+      always() &&
+      needs.build-and-push.result == 'success' &&
+      (needs.production-approval.result == 'success' || github.event.inputs.skip_approval == 'true')
+    
+    steps:
+      - name: Checkout GitOps repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.GITOPS_REPO }}
+          ref: ${{ env.GITOPS_BRANCH }}
+          token: ${{ secrets.GITOPS_REPO_TOKEN }}
+      
+      - name: Update production image tags
+        run: |
+          SERVICES=("ms-product" "ms-inventory" "ms-supplier" "ms-order-management" "ms-identity" "web")
+          KUSTOMIZATION="overlays/production/kustomization.yaml"
+          IMAGE_TAG="${{ github.sha }}"
+          
+          echo "Updating all services in production to $IMAGE_TAG"
+          
+          # Check if images section exists
+          if ! grep -q "^images:" "$KUSTOMIZATION"; then
+            echo "" >> "$KUSTOMIZATION"
+            echo "images:" >> "$KUSTOMIZATION"
+          fi
+          
+          for SERVICE in "${SERVICES[@]}"; do
+            echo "Updating kubestock/$SERVICE to $IMAGE_TAG"
+            if grep -q "kubestock/$SERVICE" "$KUSTOMIZATION"; then
+              sed -i "/kubestock\/$SERVICE/,/newTag:/s|newTag: .*|newTag: $IMAGE_TAG|" "$KUSTOMIZATION"
+            else
+              echo "- name: 478468757808.dkr.ecr.ap-south-1.amazonaws.com/kubestock/$SERVICE" >> "$KUSTOMIZATION"
+              echo "  newTag: $IMAGE_TAG" >> "$KUSTOMIZATION"
+            fi
+          done
+          
+          echo "Updated production kustomization.yaml:"
+          cat "$KUSTOMIZATION"
+      
+      - name: Commit and push production changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "🚀 Manual deploy to production: ALL services to ${{ github.sha }}
+          
+          Triggered by: @${{ github.actor }}
+          Workflow: ${{ github.workflow }} #${{ github.run_number }}" || echo "No changes"
+          git push
+      
+      - name: Production deployment summary
+        run: |
+          echo "## 🚀 Deployed to Production" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image Tag:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** https://kubestock.dpiyumal.me" >> $GITHUB_STEP_SUMMARY
+          echo "**Services:** ALL" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🎉 **Production deployment complete! ArgoCD will sync automatically.**" >> $GITHUB_STEP_SUMMARY
 
   # ═══════════════════════════════════════════════════════════════
   # FINAL SUMMARY
@@ -339,7 +423,7 @@ jobs:
   summary:
     name: Pipeline Summary
     runs-on: ubuntu-latest
-    needs: [update-gitops]
+    needs: [deploy-production]
     if: always()
     
     steps:
@@ -354,7 +438,9 @@ jobs:
           echo "- ✅ Docker Build: All services" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Integration Tests: All services" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Push to ECR: All services" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ GitOps Update: All services" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Deploy to Staging: All services" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Deploy to Production: All services" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Environment:** ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Image Tag:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Production URL:** https://kubestock.dpiyumal.me" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by:** @${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
