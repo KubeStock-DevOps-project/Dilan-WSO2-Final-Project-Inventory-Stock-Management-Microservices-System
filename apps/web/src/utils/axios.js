@@ -1,11 +1,24 @@
 import axios from "axios";
 
 /**
+ * Get config value with runtime config taking precedence over build-time env
+ */
+const getConfig = (key, defaultValue = "") => {
+  if (typeof window !== 'undefined' && window.__RUNTIME_CONFIG__ && window.__RUNTIME_CONFIG__[key]) {
+    const value = window.__RUNTIME_CONFIG__[key];
+    if (!value.startsWith('__') || !value.endsWith('__')) {
+      return value;
+    }
+  }
+  return import.meta.env[key] || defaultValue;
+};
+
+/**
  * Get access token from Asgardeo session storage
  * The Asgardeo SDK stores tokens in sessionStorage with a specific key pattern
  */
 const getAsgardeoToken = () => {
-  const clientId = import.meta.env.VITE_ASGARDEO_CLIENT_ID;
+  const clientId = getConfig('VITE_ASGARDEO_CLIENT_ID');
   
   // Try session storage first (default Asgardeo storage)
   const sessionData = sessionStorage.getItem(`session_data-instance_0`);
