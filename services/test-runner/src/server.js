@@ -19,7 +19,7 @@ app.get('/health', (req, res) => {
 });
 
 app.post('/api/tests/run', async (req, res) => {
-    const { testType = 'smoke', vus = 1, duration = '5s', targetUrl } = req.body;
+    const { testType = 'smoke', vus = 1, duration = '5s', targetUrl, serviceUrls = {} } = req.body;
 
     // Validate test type
     const scriptPath = path.join(__dirname, 'k6', `${testType}.js`);
@@ -37,7 +37,16 @@ app.post('/api/tests/run', async (req, res) => {
 
     // Construct k6 command
     // Pass params via environment variables to k6
-    const cmd = `k6 run --vus ${vus} --duration ${duration} -e BASE_URL=${baseUrl} -e ACCESS_TOKEN=${accessToken} ${scriptPath}`;
+    let envVars = `-e BASE_URL=${baseUrl} -e ACCESS_TOKEN=${accessToken}`;
+
+    // Add specific service URLs if provided
+    if (serviceUrls.product) envVars += ` -e PRODUCT_URL=${serviceUrls.product}`;
+    if (serviceUrls.inventory) envVars += ` -e INVENTORY_URL=${serviceUrls.inventory}`;
+    if (serviceUrls.supplier) envVars += ` -e SUPPLIER_URL=${serviceUrls.supplier}`;
+    if (serviceUrls.order) envVars += ` -e ORDER_URL=${serviceUrls.order}`;
+    if (serviceUrls.identity) envVars += ` -e IDENTITY_URL=${serviceUrls.identity}`;
+
+    const cmd = `k6 run --vus ${vus} --duration ${duration} ${envVars} ${scriptPath}`;
 
     console.log(`🚀 Starting Test: ${cmd}`);
 
@@ -53,17 +62,43 @@ app.post('/api/tests/run', async (req, res) => {
     // Execute k6
     const child = exec(cmd);
 
+    // Ensure logs directory exists
+    // Ensure logs directory exists (Use /app/logs, NOT /app/src/logs because src is RO)
+    const fs = require('fs');
+    // WORKDIR is /app, so process.cwd() is /app. logs will be at /app/logs
+    const logDir = path.join(process.cwd(), 'logs');
+    try {
+        if (!fs.existsSync(logDir)) {
+            fs.mkdirSync(logDir);
+        }
+    } catch (err) {
+        console.error('❌ Failed to create log directory:', err.message);
+    }
+    const logFile = path.join(logDir, `${testId}.log`);
+
     child.stdout.on('data', (data) => {
         const lines = data.toString().split('\n');
         lines.forEach(line => {
-            if (line.trim()) runningTests[testId].logs.push(line);
+            if (line.trim()) {
+                const logLine = line;
+                runningTests[testId].logs.push(logLine);
+                try {
+                    fs.appendFileSync(logFile, logLine + '\n');
+                } catch (e) { /* ignore write errors to avoid crash */ }
+            }
         });
     });
 
     child.stderr.on('data', (data) => {
         const lines = data.toString().split('\n');
         lines.forEach(line => {
-            if (line.trim()) runningTests[testId].logs.push(`[stderr] ${line}`);
+            if (line.trim()) {
+                const logLine = `[stderr] ${line}`;
+                runningTests[testId].logs.push(logLine);
+                try {
+                    fs.appendFileSync(logFile, logLine + '\n');
+                } catch (e) { /* ignore */ }
+            }
         });
     });
 
@@ -106,6 +141,6 @@ app.get('/api/tests/:id/logs', (req, res) => {
     });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`✅ Test Runner Service listening on port ${PORT}`);
 });

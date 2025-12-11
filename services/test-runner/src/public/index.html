@@ -57,6 +57,40 @@
                     </div>
                 </div>
 
+                <!-- Advanced Options -->
+                <div class="pt-4 border-t border-gray-700">
+                    <button onclick="document.getElementById('advancedOptions').classList.toggle('hidden')"
+                        class="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1 mb-2 focus:outline-none">
+                        <span>⚙️ Advanced: Direct Service URLs</span>
+                    </button>
+
+                    <div id="advancedOptions" class="hidden space-y-3 text-sm">
+                        <p class="text-xs text-gray-500 mb-2">Override Gateway URL for specific services (e.g. to bypass
+                            rate limits).</p>
+
+                        <div>
+                            <input type="text" id="productUrl" placeholder="Product Service URL"
+                                class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-white text-xs">
+                        </div>
+                        <div>
+                            <input type="text" id="inventoryUrl" placeholder="Inventory Service URL"
+                                class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-white text-xs">
+                        </div>
+                        <div>
+                            <input type="text" id="supplierUrl" placeholder="Supplier Service URL"
+                                class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-white text-xs">
+                        </div>
+                        <div>
+                            <input type="text" id="orderUrl" placeholder="Order Service URL"
+                                class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-white text-xs">
+                        </div>
+                        <div>
+                            <input type="text" id="identityUrl" placeholder="Identity Service URL"
+                                class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-white text-xs">
+                        </div>
+                    </div>
+                </div>
+
                 <button onclick="startTest()" id="runBtn"
                     class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded transition-all shadow-lg shadow-blue-500/30">
                     Start Test Run
@@ -89,6 +123,18 @@
             const duration = document.getElementById('duration').value;
             const targetUrl = document.getElementById('targetUrl').value;
 
+            // Collect optional service URLs
+            const serviceUrls = {
+                product: document.getElementById('productUrl').value,
+                inventory: document.getElementById('inventoryUrl').value,
+                supplier: document.getElementById('supplierUrl').value,
+                order: document.getElementById('orderUrl').value,
+                identity: document.getElementById('identityUrl').value
+            };
+
+            // Remove empty keys
+            Object.keys(serviceUrls).forEach(key => !serviceUrls[key] && delete serviceUrls[key]);
+
             // Reset UI
             logsDiv.innerText = '';
             btn.disabled = true;
@@ -100,7 +146,7 @@
                 const res = await fetch('/api/tests/run', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ testType, vus, duration, targetUrl })
+                    body: JSON.stringify({ testType, vus, duration, targetUrl, serviceUrls })
                 });
                 const data = await res.json();
 

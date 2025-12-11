@@ -27,11 +27,28 @@ const params = {
     headers: headers,
 };
 
+// Define targets based on provided Env Vars
+const targets = [];
+if (__ENV.PRODUCT_URL) targets.push({ name: 'Product', url: __ENV.PRODUCT_URL });
+if (__ENV.INVENTORY_URL) targets.push({ name: 'Inventory', url: __ENV.INVENTORY_URL });
+if (__ENV.SUPPLIER_URL) targets.push({ name: 'Supplier', url: __ENV.SUPPLIER_URL });
+if (__ENV.ORDER_URL) targets.push({ name: 'Order', url: __ENV.ORDER_URL });
+if (__ENV.IDENTITY_URL) targets.push({ name: 'Identity', url: __ENV.IDENTITY_URL });
+
+// Fallback: If no specific URL is provided, default to Product Service via Gateway
+if (targets.length === 0) {
+    targets.push({ name: 'Product (Default)', url: `${BASE_URL}/api/products` });
+}
+
 export default function () {
-    const res = http.get(`${BASE_URL}/api/products`, params);
+    // Pick a random target from the available list
+    // This allows mixed load testing if multiple URLs are provided
+    const target = targets[Math.floor(Math.random() * targets.length)];
+
+    const res = http.get(target.url, params);
 
     check(res, {
-        'status is 200': (r) => r.status === 200,
+        [`${target.name} status is 200`]: (r) => r.status === 200,
     });
 
     sleep(1);

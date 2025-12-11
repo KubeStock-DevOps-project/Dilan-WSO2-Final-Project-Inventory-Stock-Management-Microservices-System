@@ -27,9 +27,9 @@ const params = {
 };
 
 export default function () {
-    // 1. Check Product Service (Via Gateway)
-
-    const resProduct = http.get(`${BASE_URL}/api/products`, params);
+    // 1. Check Product Service
+    const productUrl = __ENV.PRODUCT_URL || `${BASE_URL}/api/products`;
+    const resProduct = http.get(productUrl, params);
     check(resProduct, {
         '✅ Product Service UP': (r) => r.status === 200,
     });
@@ -39,7 +39,8 @@ export default function () {
 
     // 2. Check Inventory Service
     // Critical dependency for stock management
-    const resInventory = http.get(`${BASE_URL}/api/inventory`, params);
+    const inventoryUrl = __ENV.INVENTORY_URL || `${BASE_URL}/api/inventory`;
+    const resInventory = http.get(inventoryUrl, params);
     check(resInventory, {
         '✅ Inventory Service UP': (r) => r.status === 200,
     });
@@ -48,7 +49,8 @@ export default function () {
     }
 
     // 3. Check Supplier Service
-    const resSupplier = http.get(`${BASE_URL}/api/suppliers`, params);
+    const supplierUrl = __ENV.SUPPLIER_URL || `${BASE_URL}/api/suppliers`;
+    const resSupplier = http.get(supplierUrl, params);
     check(resSupplier, {
         '✅ Supplier Service UP': (r) => r.status === 200,
     });
@@ -57,7 +59,8 @@ export default function () {
     }
 
     // 4. Check Order Management Service
-    const resOrder = http.get(`${BASE_URL}/api/orders`, params);
+    const orderUrl = __ENV.ORDER_URL || `${BASE_URL}/api/orders`;
+    const resOrder = http.get(orderUrl, params);
     check(resOrder, {
         '✅ Order Service UP': (r) => r.status === 200,
     });
@@ -67,7 +70,8 @@ export default function () {
 
     // 5. Check Identity/Auth Service (Optional but recommended)
     // Often these endpoints require auth headers, so checking health/public info is safer
-    const resIdentity = http.get(`${BASE_URL}/api/identity/health`, params);
+    const identityUrl = __ENV.IDENTITY_URL || `${BASE_URL}/api/identity/health`;
+    const resIdentity = http.get(identityUrl, params);
     check(resIdentity, {
         '✅ Identity Service UP': (r) => r.status === 200 || r.status === 401, // 401 is okay (means service is alive but secured)
     });
