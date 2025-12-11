@@ -141,6 +141,8 @@ app.get('/api/tests/:id/logs', (req, res) => {
     });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`✅ Test Runner Service listening on port ${PORT}`);
+const HOST = process.env.HOST || '127.0.0.1';
+
+app.listen(PORT, HOST, () => {
+    console.log(`✅ Test Runner Service listening on ${HOST}:${PORT}`);
 });

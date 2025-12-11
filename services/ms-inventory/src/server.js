@@ -76,7 +76,7 @@ app.use((req, res) => {
 
 app.use(errorHandler);
 
-const HOST = process.env.HOST || '0.0.0.0';
+const HOST = process.env.HOST || '127.0.0.1';
 
 // Start server after migrations
 const startServer = async () => {

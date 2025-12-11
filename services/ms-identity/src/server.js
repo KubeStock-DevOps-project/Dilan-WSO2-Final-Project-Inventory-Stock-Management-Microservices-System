@@ -7,7 +7,7 @@ const userRoutes = require("./routes/user.routes");
 
 const app = express();
 const PORT = process.env.PORT || 3006;
-const HOST = process.env.HOST || '0.0.0.0';
+const HOST = process.env.HOST || '127.0.0.1';
 
 // Middleware
 app.use(helmet());

@@ -209,6 +209,7 @@ services:
     environment:
       NODE_ENV: development
       PORT: 3006
+      HOST: 0.0.0.0
       # Asgardeo OIDC Configuration (Machine-to-Machine)
       ASGARDEO_ORG_NAME: ${ASGARDEO_ORG_NAME:-kubestock}
       ASGARDEO_BASE_URL: ${ASGARDEO_BASE_URL:-https://api.asgardeo.io/t/kubestock}
@@ -302,6 +303,7 @@ services:
     environment:
       NODE_ENV: development
       PORT: 3007
+      HOST: 0.0.0.0
       GATEWAY_URL: http://api-gateway:80
       # Asgardeo Credentials (M2M) - Taken from .env
       ASGARDEO_TOKEN_URL: ${ASGARDEO_TOKEN_URL:-https://api.asgardeo.io/t/kubestock/oauth2/token}
