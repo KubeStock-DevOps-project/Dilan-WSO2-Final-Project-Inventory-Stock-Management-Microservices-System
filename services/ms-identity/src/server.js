@@ -16,10 +16,12 @@ app.use(metricsMiddleware);
 
 // Request logging middleware
 app.use((req, res, next) => {
-  logger.info(`${req.method} ${req.path}`, {
-    ip: req.ip,
-    userAgent: req.get("user-agent"),
-  });
+  if (req.path !== "/health") {
+    logger.info(`${req.method} ${req.path}`, {
+      ip: req.ip,
+      userAgent: req.get("user-agent"),
+    });
+  }
   next();
 });
 
