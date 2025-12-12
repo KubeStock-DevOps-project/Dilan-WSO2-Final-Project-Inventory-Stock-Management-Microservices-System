@@ -27,7 +27,7 @@ const {
  * @body    { name, category_id, unit_price, sku, ... }
  */
 router.post(
-  "/lifecycle",
+  "/",
   authenticate,
   authorizeRoles("admin", "warehouse_staff"),
   ProductLifecycleController.createProduct
