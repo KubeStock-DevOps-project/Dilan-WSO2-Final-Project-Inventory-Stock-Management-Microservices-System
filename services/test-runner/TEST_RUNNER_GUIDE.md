@@ -81,6 +81,7 @@ The test runner bypasses the Gateway and sends traffic **directly** to the speci
 You can also trigger tests programmatically (e.g., from CI/CD pipelines).
 
 ### `POST /api/tests/run`
+**Status:** `202 Accepted` (Asynchronous)
 
 **Request Body:**
 ```json
@@ -89,6 +90,7 @@ You can also trigger tests programmatically (e.g., from CI/CD pipelines).
   "vus": 10,                    // Number of Virtual Users
   "duration": "30s",            // Duration (e.g., "10s", "5m")
   "targetUrl": "http://api-gateway:80",
+  "webhookUrl": "http://my-listener.com/callback", // Optional: Result notification
   "serviceUrls": {              // Optional: For direct targeting
     "product": "http://ms-product:3001",
     "inventory": "http://ms-inventory:3002"
@@ -99,8 +101,13 @@ You can also trigger tests programmatically (e.g., from CI/CD pipelines).
 **Response:**
 ```json
 {
-  "message": "Test started",
-  "testId": "1765450222050"
+  "message": "Test run accepted",
+  "testId": "1765450222050",
+  "status": "running",
+  "links": {
+    "status": "/api/tests/1765450222050/status",
+    "logs": "/api/tests/1765450222050/logs"
+  }
 }
 ```
 

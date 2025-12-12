@@ -19,7 +19,7 @@ app.get('/health', (req, res) => {
 });
 
 app.post('/api/tests/run', async (req, res) => {
-    const { testType = 'smoke', vus = 1, duration = '5s', targetUrl, serviceUrls = {} } = req.body;
+    const { testType = 'smoke', vus = 1, duration = '5s', targetUrl, serviceUrls = {}, webhookUrl } = req.body;
 
     // Validate test type
     const scriptPath = path.join(__dirname, 'k6', `${testType}.js`);
@@ -56,7 +56,8 @@ app.post('/api/tests/run', async (req, res) => {
         status: 'running',
         startTime: new Date(),
         logs: [],
-        cmd
+        cmd,
+        webhookUrl
     };
 
     // Execute k6
@@ -102,17 +103,44 @@ app.post('/api/tests/run', async (req, res) => {
         });
     });
 
-    child.on('close', (code) => {
+    child.on('close', async (code) => {
         console.log(`🏁 Test ${testId} completed with code ${code}`);
-        runningTests[testId].status = code === 0 ? 'completed' : 'failed';
+        const status = code === 0 ? 'completed' : 'failed';
+        runningTests[testId].status = status;
         runningTests[testId].exitCode = code;
         runningTests[testId].endTime = new Date();
+
+        // Handle Webhook Callback
+        if (runningTests[testId].webhookUrl) {
+            console.log(`📣 Sending webhook to ${runningTests[testId].webhookUrl}`);
+            try {
+                // Node.js 18+ has built-in fetch
+                await fetch(runningTests[testId].webhookUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        testId,
+                        status,
+                        exitCode: code,
+                        startTime: runningTests[testId].startTime,
+                        endTime: runningTests[testId].endTime
+                    })
+                });
+            } catch (err) {
+                console.error(`❌ Failed to send webhook: ${err.message}`);
+            }
+        }
     });
 
-    res.json({
-        message: 'Test started',
+    // Valid Async REST Response
+    res.status(202).location(`/api/tests/${testId}/status`).json({
+        message: 'Test run accepted',
         testId,
-        config: { testType, vus, duration, baseUrl }
+        status: 'running',
+        links: {
+            status: `/api/tests/${testId}/status`,
+            logs: `/api/tests/${testId}/logs`
+        }
     });
 });
 
