@@ -53,10 +53,32 @@ app.get("/api/gateway/health", (req, res) => {
 
 // API routes - proxy to backend services
 Object.entries(SERVICES).forEach(([service, url]) => {
-  app.use(`/api/${service}`, (req, res) => {
-    // Rewrite the path to remove /api/<service> prefix
-    req.url = req.url === "" ? "/" : req.url;
-    proxy.web(req, res, { target: url });
+  app.use(`/api/${service}`, (req, res, next) => {
+    // Express strips /api/<service> from req.url
+    // Save original for logging
+    const originalPath = req.url || "/";
+
+    // Normalize the path for proxying
+    if (!req.url || req.url === "") {
+      req.url = "/";
+    }
+
+    console.log(`  → Proxying ${service}: ${originalPath} to ${url}${req.url}`);
+
+    proxy.web(
+      req,
+      res,
+      {
+        target: url,
+        changeOrigin: true,
+      },
+      (err) => {
+        if (err) {
+          console.error(`  ✗ Proxy error for ${service}:`, err.message);
+          next(err);
+        }
+      }
+    );
   });
 });
 

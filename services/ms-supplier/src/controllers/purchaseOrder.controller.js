@@ -33,7 +33,7 @@ class PurchaseOrderController {
 
       const filters = {};
       if (status) filters.status = status;
-      if (supplier_id) filters.supplier_id = parseInt(supplier_id);
+      if (supplier_id) filters.supplier_id = supplier_id; // Now a string (Asgardeo ID)
       if (limit) filters.limit = parseInt(limit);
 
       const purchaseOrders = await PurchaseOrder.findAll(filters);
@@ -206,7 +206,7 @@ class PurchaseOrderController {
     try {
       const { supplier_id } = req.query;
       const filters = {};
-      if (supplier_id) filters.supplier_id = parseInt(supplier_id);
+      if (supplier_id) filters.supplier_id = supplier_id; // Now a string (Asgardeo ID)
 
       const allOrders = await PurchaseOrder.findAll(filters);
 
@@ -410,7 +410,7 @@ class PurchaseOrderController {
       const { supplier_id } = req.params;
 
       const pendingRequests = await PurchaseOrder.findAll({
-        supplier_id: parseInt(supplier_id),
+        supplier_id: supplier_id, // Now a string (Asgardeo ID)
         supplier_response: "pending",
       });
 

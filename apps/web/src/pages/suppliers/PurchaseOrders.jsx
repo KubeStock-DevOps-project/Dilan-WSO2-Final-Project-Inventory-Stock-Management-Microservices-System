@@ -1,14 +1,15 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import Card from "../../components/common/Card";
-import Button from "../../components/common/Button";
-import Table from "../../components/common/Table";
+import { FiEdit, FiFilter, FiPlus, FiStar, FiTrash2 } from "react-icons/fi";
 import Badge from "../../components/common/Badge";
-import LoadingSpinner from "../../components/common/LoadingSpinner";
+import Button from "../../components/common/Button";
+import Card from "../../components/common/Card";
 import Input from "../../components/common/Input";
-import { supplierService } from "../../services/supplierService";
-import { FiPlus, FiEdit, FiTrash2, FiFilter, FiStar } from "react-icons/fi";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
+import Table from "../../components/common/Table";
 import { useAuth } from "../../hooks/useAuth";
+import identityService from "../../services/identityService";
+import { supplierService } from "../../services/supplierService";
 
 const PurchaseOrders = () => {
   const { user } = useAuth();
@@ -48,8 +49,9 @@ const PurchaseOrders = () => {
       setLoading(true);
       const [poResponse, supplierResponse] = await Promise.all([
         supplierService.getAllPurchaseOrders(),
-        supplierService.getAllSuppliers(),
+        identityService.listSuppliers(),
       ]);
+
       setPurchaseOrders(poResponse.data || []);
       setSuppliers(supplierResponse.data || []);
     } catch (error) {
@@ -95,10 +97,9 @@ const PurchaseOrders = () => {
     try {
       const poData = {
         ...formData,
-        supplier_id: parseInt(formData.supplier_id),
+        supplier_id: formData.supplier_id,
         total_amount: parseFloat(formData.total_amount),
       };
-
       if (editingPO) {
         await supplierService.updatePurchaseOrder(editingPO.id, poData);
         toast.success("Purchase order updated successfully!");
@@ -209,7 +210,7 @@ const PurchaseOrders = () => {
 
   const getSupplierName = (supplierId) => {
     const supplier = suppliers.find((s) => s.id === supplierId);
-    return supplier ? supplier.name : `Supplier #${supplierId}`;
+    return supplier ? supplier.displayName : `Supplier #${supplierId}`;
   };
 
   const columns = [
@@ -358,7 +359,7 @@ const PurchaseOrders = () => {
                 <option value="">All Suppliers</option>
                 {suppliers.map((supplier) => (
                   <option key={supplier.id} value={supplier.id}>
-                    {supplier.name}
+                    {supplier.displayName}
                   </option>
                 ))}
               </select>
@@ -406,7 +407,7 @@ const PurchaseOrders = () => {
                       <option value="">Select Supplier</option>
                       {suppliers.map((supplier) => (
                         <option key={supplier.id} value={supplier.id}>
-                          {supplier.name}
+                          {supplier.displayName}
                         </option>
                       ))}
                     </select>
