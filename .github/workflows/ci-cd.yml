@@ -222,6 +222,13 @@ jobs:
             sed -i "/kubestock\/web/,/newTag:/s/newTag: .*/newTag: $IMAGE_TAG/" "$OVERLAY_PATH"
           fi
           
+          # Test runner is in a dedicated namespace, update its deployment directly
+          if [[ "${{ needs.detect-changes.outputs.test-runner }}" == "true" ]]; then
+            TEST_RUNNER_PATH="base/services/test-runner/deployment.yaml"
+            sed -i "s|image: 478468757808.dkr.ecr.ap-south-1.amazonaws.com/kubestock/test-runner:.*|image: 478468757808.dkr.ecr.ap-south-1.amazonaws.com/kubestock/test-runner:$IMAGE_TAG|" "$TEST_RUNNER_PATH"
+            echo "Updated test-runner deployment"
+          fi
+          
           echo "Updated kustomization.yaml:"
           cat "$OVERLAY_PATH"
 
@@ -246,6 +253,7 @@ jobs:
           if [[ "${{ needs.detect-changes.outputs.ms-order-management }}" == "true" ]]; then echo "- ✅ ms-order-management" >> $GITHUB_STEP_SUMMARY; fi
           if [[ "${{ needs.detect-changes.outputs.ms-identity }}" == "true" ]]; then echo "- ✅ ms-identity" >> $GITHUB_STEP_SUMMARY; fi
           if [[ "${{ needs.detect-changes.outputs.web }}" == "true" ]]; then echo "- ✅ web (frontend)" >> $GITHUB_STEP_SUMMARY; fi
+          if [[ "${{ needs.detect-changes.outputs.test-runner }}" == "true" ]]; then echo "- ✅ test-runner" >> $GITHUB_STEP_SUMMARY; fi
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "⏳ **ArgoCD will sync automatically. Review in staging before approving production.**" >> $GITHUB_STEP_SUMMARY
 
@@ -371,5 +379,6 @@ jobs:
           if [[ "${{ needs.detect-changes.outputs.ms-order-management }}" == "true" ]]; then echo "- ✅ ms-order-management" >> $GITHUB_STEP_SUMMARY; fi
           if [[ "${{ needs.detect-changes.outputs.ms-identity }}" == "true" ]]; then echo "- ✅ ms-identity" >> $GITHUB_STEP_SUMMARY; fi
           if [[ "${{ needs.detect-changes.outputs.web }}" == "true" ]]; then echo "- ✅ web (frontend)" >> $GITHUB_STEP_SUMMARY; fi
+          if [[ "${{ needs.detect-changes.outputs.test-runner }}" == "true" ]]; then echo "- ✅ test-runner" >> $GITHUB_STEP_SUMMARY; fi
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "🎉 **Production deployment complete! ArgoCD will sync automatically.**" >> $GITHUB_STEP_SUMMARY
