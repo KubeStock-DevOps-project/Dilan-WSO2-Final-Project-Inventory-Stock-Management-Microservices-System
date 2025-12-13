@@ -1,14 +1,14 @@
-import { useState, useEffect } from "react";
+import { Filter, Plus, Search } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Search, Filter } from "lucide-react";
-import Card from "../../components/common/Card";
-import Button from "../../components/common/Button";
-import Input from "../../components/common/Input";
 import Badge from "../../components/common/Badge";
+import Button from "../../components/common/Button";
+import Card from "../../components/common/Card";
+import Input from "../../components/common/Input";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
+import { useAuth } from "../../hooks/useAuth";
 import { productService } from "../../services/productService";
 import { formatCurrency } from "../../utils/helpers";
-import { useAuth } from "../../hooks/useAuth";
 
 const ProductList = () => {
   const { user } = useAuth();
@@ -104,8 +104,19 @@ const ProductList = () => {
               <span className="text-lg font-bold text-primary">
                 {formatCurrency(product.unit_price)}
               </span>
-              <Badge variant={product.is_active ? "success" : "danger"}>
-                {product.is_active ? "Active" : "Inactive"}
+              <Badge
+                variant={(() => {
+                  const state = product.lifecycle_state || "draft";
+                  return state === "active"
+                    ? "success"
+                    : state === "draft"
+                    ? "default"
+                    : state === "discontinued"
+                    ? "danger"
+                    : "default";
+                })()}
+              >
+                {product.lifecycle_state || "draft"}
               </Badge>
             </div>
             {canManageProducts ? (

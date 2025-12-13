@@ -62,6 +62,7 @@ class OrderService {
           product_name: item.product_name,
           quantity: item.quantity,
           unit_price: item.unit_price,
+          total_price: item.quantity * item.unit_price,
         })),
         client
       );
@@ -83,7 +84,11 @@ class OrderService {
       return { order, items, totals };
     } catch (error) {
       await client.query("ROLLBACK");
-      logger.error("Error creating order:", error);
+      logger.error("Error creating order:", {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+      });
       throw error;
     } finally {
       client.release();
@@ -102,12 +107,21 @@ class OrderService {
         items.map(async (item) => {
           // Get product details
           const response = await axios.get(
-            `${PRODUCT_SERVICE_URL}/api/products/${item.product_id}`
+            `${PRODUCT_SERVICE_URL}/${item.product_id}`
           );
-          const product = response.data;
+          const product = response.data.data || response.data;
 
-          if (!product) {
-            throw new Error(`Product ${item.product_id} not found`);
+          // Validate based on response structure
+          if (response.data && typeof response.data.data !== "undefined") {
+            // Structured response with success flag
+            if (!response.data.success || !product) {
+              throw new Error(`Product ${item.product_id} not found`);
+            }
+          } else {
+            // Raw response
+            if (!product) {
+              throw new Error(`Product ${item.product_id} not found`);
+            }
           }
 
           if (!product.is_active) {
@@ -130,8 +144,9 @@ class OrderService {
 
       return enrichedItems;
     } catch (error) {
-      logger.error("Error validating items:", error.message);
-      throw error;
+      const errorMessage = error.response?.data?.message || error.message;
+      logger.error("Error validating items:", errorMessage);
+      throw new Error(errorMessage);
     }
   }
 
@@ -146,15 +161,16 @@ class OrderService {
         quantity: item.quantity,
       }));
 
-      const response = await axios.post(
-        `${INVENTORY_SERVICE_URL}/api/inventory/bulk-check`,
-        { items: stockCheckItems }
-      );
+      const response = await axios.post(`${INVENTORY_SERVICE_URL}/bulk-check`, {
+        items: stockCheckItems,
+      });
 
-      return response.data;
+      // Inventory service returns {success: true, data: {...}}
+      return response.data.data || response.data;
     } catch (error) {
-      logger.error("Error checking stock:", error.message);
-      throw new Error("Unable to verify stock availability");
+      const errorMessage = error.response?.data?.message || error.message;
+      logger.error("Error checking stock:", errorMessage);
+      throw new Error("Unable to verify stock availability: " + errorMessage);
     }
   }
 
@@ -165,7 +181,7 @@ class OrderService {
     try {
       await Promise.all(
         items.map((item) =>
-          axios.post(`${INVENTORY_SERVICE_URL}/api/inventory/reserve`, {
+          axios.post(`${INVENTORY_SERVICE_URL}/reserve`, {
             product_id: item.product_id,
             quantity: item.quantity,
             order_id: orderId,
@@ -175,8 +191,9 @@ class OrderService {
 
       logger.info(`Stock reserved for order ${orderId}`);
     } catch (error) {
-      logger.error("Error reserving stock:", error.message);
-      throw new Error("Failed to reserve stock for order");
+      const errorMessage = error.response?.data?.message || error.message;
+      logger.error("Error reserving stock:", errorMessage);
+      throw new Error("Failed to reserve stock for order: " + errorMessage);
     }
   }
 
@@ -327,14 +344,11 @@ class OrderService {
     try {
       await Promise.all(
         items.map((item) =>
-          axios.post(
-            `${INVENTORY_SERVICE_URL}/api/inventory/confirm-deduction`,
-            {
-              product_id: item.product_id,
-              quantity: item.quantity,
-              order_id: orderId,
-            }
-          )
+          axios.post(`${INVENTORY_SERVICE_URL}/confirm-deduction`, {
+            product_id: item.product_id,
+            quantity: item.quantity,
+            order_id: orderId,
+          })
         )
       );
 
@@ -352,7 +366,7 @@ class OrderService {
     try {
       await Promise.all(
         items.map((item) =>
-          axios.post(`${INVENTORY_SERVICE_URL}/api/inventory/release`, {
+          axios.post(`${INVENTORY_SERVICE_URL}/release`, {
             product_id: item.product_id,
             quantity: item.quantity,
             order_id: orderId,
@@ -374,7 +388,7 @@ class OrderService {
     try {
       await Promise.all(
         items.map((item) =>
-          axios.post(`${INVENTORY_SERVICE_URL}/api/inventory/return`, {
+          axios.post(`${INVENTORY_SERVICE_URL}/return`, {
             product_id: item.product_id,
             quantity: item.quantity,
             order_id: orderId,

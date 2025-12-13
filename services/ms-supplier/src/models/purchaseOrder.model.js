@@ -1,6 +1,14 @@
 const db = require("../config/database");
 const logger = require("../config/logger");
 
+// Allowed supplier response values matching DB CHECK constraint
+const SUPPLIER_RESPONSES = [
+  "pending",
+  "approved",
+  "rejected",
+  "partially_approved",
+];
+
 class PurchaseOrder {
   static async create(poData) {
     const {
@@ -68,10 +76,21 @@ class PurchaseOrder {
       paramCount++;
     }
 
-    if (filters.supplier_response) {
-      query += ` AND po.supplier_response = $${paramCount}`;
-      values.push(filters.supplier_response);
-      paramCount++;
+    if (
+      filters.supplier_response !== undefined &&
+      filters.supplier_response !== null
+    ) {
+      if (SUPPLIER_RESPONSES.includes(filters.supplier_response)) {
+        query += ` AND po.supplier_response = $${paramCount}`;
+        values.push(filters.supplier_response);
+        paramCount++;
+      } else {
+        logger.warn(
+          `Invalid supplier_response value: ${
+            filters.supplier_response
+          }. Allowed values: ${SUPPLIER_RESPONSES.join(", ")}`
+        );
+      }
     }
 
     query += " ORDER BY po.created_at DESC";

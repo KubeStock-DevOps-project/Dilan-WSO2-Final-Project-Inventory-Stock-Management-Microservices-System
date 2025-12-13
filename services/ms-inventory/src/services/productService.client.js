@@ -7,9 +7,7 @@ const PRODUCT_SERVICE_URL =
 class ProductServiceClient {
   static async getProductById(productId) {
     try {
-      const response = await axios.get(
-        `${PRODUCT_SERVICE_URL}/api/products/${productId}`
-      );
+      const response = await axios.get(`${PRODUCT_SERVICE_URL}/${productId}`);
       return response.data.data;
     } catch (error) {
       logger.error(`Error fetching product ${productId}:`, error.message);
@@ -19,9 +17,7 @@ class ProductServiceClient {
 
   static async getProductBySku(sku) {
     try {
-      const response = await axios.get(
-        `${PRODUCT_SERVICE_URL}/api/products/sku/${sku}`
-      );
+      const response = await axios.get(`${PRODUCT_SERVICE_URL}/sku/${sku}`);
       return response.data.data;
     } catch (error) {
       logger.error(`Error fetching product with SKU ${sku}:`, error.message);
@@ -31,12 +27,9 @@ class ProductServiceClient {
 
   static async getProductsByIds(productIds) {
     try {
-      const response = await axios.post(
-        `${PRODUCT_SERVICE_URL}/api/products/batch`,
-        {
-          ids: productIds,
-        }
-      );
+      const response = await axios.post(`${PRODUCT_SERVICE_URL}/batch`, {
+        ids: productIds,
+      });
       return response.data.data;
     } catch (error) {
       logger.error("Error fetching products batch:", error.message);
