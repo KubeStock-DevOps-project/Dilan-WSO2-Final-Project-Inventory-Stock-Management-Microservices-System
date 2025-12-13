@@ -1,4 +1,4 @@
-# 🚀 KubeStock Test Runner Guide
+# 🚀 KubeStock Test Runner Guide.
 
 This document provides a complete overview of the **Test Runner Service**, how to use it, and how it fits into the KubeStock architecture.
 
