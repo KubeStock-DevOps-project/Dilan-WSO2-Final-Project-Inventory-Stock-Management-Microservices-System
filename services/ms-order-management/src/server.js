@@ -23,7 +23,10 @@ const dbConfig = {
   database: process.env.DB_NAME || "order_db",
   user: process.env.DB_USER || "postgres",
   password: process.env.DB_PASSWORD || "postgres",
-  ssl: process.env.DB_HOST && process.env.DB_HOST.includes('rds.amazonaws.com') ? { rejectUnauthorized: false } : false,
+  ssl:
+    process.env.DB_HOST && process.env.DB_HOST.includes("rds.amazonaws.com")
+      ? { rejectUnauthorized: false }
+      : false,
 };
 
 setInterval(() => {
@@ -80,7 +83,7 @@ app.use((req, res) => {
 // Error handler
 app.use(errorHandler);
 
-const HOST = process.env.HOST || '127.0.0.1';
+const HOST = process.env.HOST || "127.0.0.1";
 
 // Start server after migrations
 const startServer = async () => {

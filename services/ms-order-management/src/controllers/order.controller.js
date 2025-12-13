@@ -49,11 +49,13 @@ class OrderController {
         },
       });
     } catch (error) {
-      logger.error("Create order error:", error);
+      logger.error("Create order error:", {
+        message: error.message,
+        stack: error.stack?.split("\n").slice(0, 3).join("\n"),
+      });
       res.status(500).json({
         success: false,
         message: error.message || "Error creating order",
-        error: error.message,
       });
     }
   }

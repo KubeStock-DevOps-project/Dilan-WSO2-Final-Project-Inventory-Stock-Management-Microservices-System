@@ -245,7 +245,7 @@ class InventoryService {
         let productName = `Product ${inventory.product_id}`;
         try {
           const productResponse = await axios.get(
-            `${PRODUCT_SERVICE_URL}/api/products/${inventory.product_id}`
+            `${PRODUCT_SERVICE_URL}/${inventory.product_id}`
           );
           productName = productResponse.data.name || productName;
         } catch (error) {
