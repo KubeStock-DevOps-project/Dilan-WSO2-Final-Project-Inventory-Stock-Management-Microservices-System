@@ -48,9 +48,8 @@ class PurchaseOrder {
 
   static async findAll(filters = {}) {
     let query = `
-      SELECT po.*, s.name as supplier_name, s.email as supplier_email
+      SELECT po.*
       FROM purchase_orders po
-      LEFT JOIN suppliers s ON po.supplier_id = s.id
       WHERE 1=1
     `;
 
@@ -69,7 +68,11 @@ class PurchaseOrder {
       paramCount++;
     }
 
-    // supplier_response filter removed - column doesn't exist in schema
+    if (filters.supplier_response) {
+      query += ` AND po.supplier_response = $${paramCount}`;
+      values.push(filters.supplier_response);
+      paramCount++;
+    }
 
     query += " ORDER BY po.created_at DESC";
 
@@ -93,9 +96,8 @@ class PurchaseOrder {
 
   static async findById(id) {
     const query = `
-      SELECT po.*, s.name as supplier_name, s.email as supplier_email, s.phone as supplier_phone
+      SELECT po.*
       FROM purchase_orders po
-      LEFT JOIN suppliers s ON po.supplier_id = s.id
       WHERE po.id = $1
     `;
 

@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import Card from "../../components/common/Card";
-import Button from "../../components/common/Button";
-import Input from "../../components/common/Input";
 import Badge from "../../components/common/Badge";
+import Button from "../../components/common/Button";
+import Card from "../../components/common/Card";
+import Input from "../../components/common/Input";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import { useAuth } from "../../hooks/useAuth";
 import { productService } from "../../services/productService";
@@ -39,8 +39,8 @@ const ProductLifecycleManagement = () => {
     try {
       setLoading(true);
       const [statsRes, pendingRes, productsRes] = await Promise.all([
-        apiClient.get(API.product.lifecycleStats()),
-        apiClient.get(API.product.pendingApprovals()),
+        productService.getProductLifecycleStats(),
+        productService.getPendingApprovals(),
         productService.getAllProducts(),
       ]);
 
