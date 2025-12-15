@@ -40,8 +40,8 @@ class OrderItem {
       const createdItems = [];
       for (const item of items) {
         const query = `
-          INSERT INTO order_items (order_id, product_id, sku, product_name, quantity, unit_price)
-          VALUES ($1, $2, $3, $4, $5, $6)
+          INSERT INTO order_items (order_id, product_id, sku, product_name, quantity, unit_price, total_price)
+          VALUES ($1, $2, $3, $4, $5, $6, $7)
           RETURNING *
         `;
         const values = [
@@ -51,6 +51,7 @@ class OrderItem {
           item.product_name,
           item.quantity,
           item.unit_price,
+          item.total_price,
         ];
         const result = await client.query(query, values);
         createdItems.push(result.rows[0]);

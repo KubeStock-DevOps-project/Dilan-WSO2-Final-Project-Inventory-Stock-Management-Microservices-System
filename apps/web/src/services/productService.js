@@ -24,7 +24,9 @@ export const productService = {
   },
 
   searchProducts: async (query) => {
-    const response = await apiClient.get(API.product.search(), { params: { q: query } });
+    const response = await apiClient.get(API.product.search(), {
+      params: { q: query },
+    });
     return response.data;
   },
 
@@ -55,12 +57,18 @@ export const productService = {
   },
 
   createCategory: async (categoryData) => {
-    const response = await apiClient.post(API.product.categories(), categoryData);
+    const response = await apiClient.post(
+      API.product.categories(),
+      categoryData
+    );
     return response.data;
   },
 
   updateCategory: async (id, categoryData) => {
-    const response = await apiClient.put(API.product.categoryById(id), categoryData);
+    const response = await apiClient.put(
+      API.product.categoryById(id),
+      categoryData
+    );
     return response.data;
   },
 
@@ -82,6 +90,11 @@ export const productService = {
   // Lifecycle
   getProductsByLifecycle: async (state) => {
     const response = await apiClient.get(API.product.lifecycle(state));
+    return response.data;
+  },
+
+  getProductLifecycleStats: async () => {
+    const response = await apiClient.get(API.product.lifecycleStats());
     return response.data;
   },
 

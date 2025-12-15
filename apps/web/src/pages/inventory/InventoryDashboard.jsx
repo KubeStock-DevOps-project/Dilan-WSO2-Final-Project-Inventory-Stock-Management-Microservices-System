@@ -1,16 +1,16 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import Card from "../../components/common/Card";
-import Table from "../../components/common/Table";
-import Badge from "../../components/common/Badge";
-import LoadingSpinner from "../../components/common/LoadingSpinner";
-import { inventoryService } from "../../services/inventoryService";
 import {
-  FiPackage,
   FiAlertTriangle,
-  FiTrendingUp,
+  FiPackage,
   FiTrendingDown,
+  FiTrendingUp,
 } from "react-icons/fi";
+import Badge from "../../components/common/Badge";
+import Card from "../../components/common/Card";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
+import Table from "../../components/common/Table";
+import { inventoryService } from "../../services/inventoryService";
 
 const InventoryDashboard = () => {
   const [inventory, setInventory] = useState([]);
@@ -37,11 +37,12 @@ const InventoryDashboard = () => {
       const totalItems = inventoryData.length;
       const lowStock = inventoryData.filter(
         (item) =>
-          item.available_quantity <= item.reorder_level &&
-          item.available_quantity > 0
+          Number(item.available_quantity || 0) <=
+            Number(item.reorder_level || 0) &&
+          Number(item.available_quantity || 0) > 0
       ).length;
       const outOfStock = inventoryData.filter(
-        (item) => item.available_quantity === 0
+        (item) => Number(item.available_quantity || 0) === 0
       ).length;
 
       setStats({
@@ -50,7 +51,9 @@ const InventoryDashboard = () => {
         outOfStock,
         totalValue: inventoryData.reduce(
           (sum, item) =>
-            sum + item.available_quantity * parseFloat(item.unit_price || 0),
+            sum +
+            Number(item.available_quantity || 0) *
+              parseFloat(item.unit_price || 0),
           0
         ),
       });
@@ -63,11 +66,16 @@ const InventoryDashboard = () => {
   };
 
   const getStockStatus = (item) => {
-    if (item.available_quantity === 0) {
+    if (Number(item.available_quantity || 0) === 0) {
       return { label: "Out of Stock", variant: "danger" };
-    } else if (item.available_quantity <= item.reorder_level) {
+    } else if (
+      Number(item.available_quantity || 0) <= Number(item.reorder_level || 0)
+    ) {
       return { label: "Low Stock", variant: "warning" };
-    } else if (item.available_quantity >= item.max_stock_level * 0.9) {
+    } else if (
+      Number(item.available_quantity || 0) >=
+      item.max_stock_level * 0.9
+    ) {
       return { label: "Overstock", variant: "info" };
     } else {
       return { label: "In Stock", variant: "success" };

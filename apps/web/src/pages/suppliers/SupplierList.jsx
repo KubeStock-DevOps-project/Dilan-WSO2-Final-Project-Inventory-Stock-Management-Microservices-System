@@ -1,19 +1,21 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import Card from "../../components/common/Card";
-import Button from "../../components/common/Button";
-import Table from "../../components/common/Table";
+import { FiMail, FiPhone, FiTrash2, FiUser, FiUserPlus } from "react-icons/fi";
 import Badge from "../../components/common/Badge";
+import Button from "../../components/common/Button";
+import Card from "../../components/common/Card";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import Modal from "../../components/common/Modal";
-import { identityService } from "../../services/identityService";
+import Table from "../../components/common/Table";
 import { useAuth } from "../../hooks/useAuth";
-import { FiTrash2, FiMail, FiPhone, FiUserPlus, FiUser } from "react-icons/fi";
+import { identityService } from "../../services/identityService";
 
 const SupplierList = () => {
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [supplierToDelete, setSupplierToDelete] = useState(null);
   const [formData, setFormData] = useState({
     email: "",
     firstName: "",
@@ -47,22 +49,29 @@ const SupplierList = () => {
     }
   };
 
-  const handleDelete = async (id, email) => {
-    if (window.confirm(`Are you sure you want to delete supplier ${email}?`)) {
-      try {
-        await identityService.deleteUser(id);
-        toast.success("Supplier deleted successfully");
-        fetchSuppliers();
-      } catch (error) {
-        console.error("Error deleting supplier:", error);
-        toast.error(error.response?.data?.message || "Failed to delete supplier");
-      }
+  const handleDeleteClick = (id, email) => {
+    setSupplierToDelete({ id, email });
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!supplierToDelete) return;
+
+    try {
+      await identityService.deleteUser(supplierToDelete.id);
+      toast.success("Supplier deleted successfully");
+      setShowDeleteModal(false);
+      setSupplierToDelete(null);
+      fetchSuppliers();
+    } catch (error) {
+      console.error("Error deleting supplier:", error);
+      toast.error(error.response?.data?.message || "Failed to delete supplier");
     }
   };
 
   const handleAddSupplier = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.email || !formData.firstName || !formData.lastName) {
       toast.error("Please fill in all required fields");
       return;
@@ -71,7 +80,9 @@ const SupplierList = () => {
     try {
       setSubmitting(true);
       await identityService.createSupplier(formData);
-      toast.success("Supplier created successfully. They will receive a password reset email.");
+      toast.success(
+        "Supplier created successfully. They will receive a password reset email."
+      );
       setShowAddModal(false);
       setFormData({ email: "", firstName: "", lastName: "", phone: "" });
       fetchSuppliers();
@@ -80,7 +91,9 @@ const SupplierList = () => {
       if (error.response?.status === 409) {
         toast.error("A user with this email already exists");
       } else {
-        toast.error(error.response?.data?.message || "Failed to create supplier");
+        toast.error(
+          error.response?.data?.message || "Failed to create supplier"
+        );
       }
     } finally {
       setSubmitting(false);
@@ -97,7 +110,9 @@ const SupplierList = () => {
             <FiUser className="w-5 h-5 text-orange-600" />
           </div>
           <div>
-            <p className="font-semibold text-gray-900">{row.displayName || `${row.firstName} ${row.lastName}`}</p>
+            <p className="font-semibold text-gray-900">
+              {row.displayName || `${row.firstName} ${row.lastName}`}
+            </p>
             <p className="text-sm text-gray-500">{row.email}</p>
           </div>
         </div>
@@ -150,7 +165,7 @@ const SupplierList = () => {
           <Button
             size="sm"
             variant="danger"
-            onClick={() => handleDelete(row.id, row.email)}
+            onClick={() => handleDeleteClick(row.id, row.email)}
             title="Delete supplier"
           >
             <FiTrash2 />
@@ -167,7 +182,9 @@ const SupplierList = () => {
   if (!isAdmin) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500">You don't have permission to manage suppliers.</p>
+        <p className="text-gray-500">
+          You don't have permission to manage suppliers.
+        </p>
       </div>
     );
   }
@@ -179,7 +196,10 @@ const SupplierList = () => {
           <h1 className="text-2xl font-bold text-gray-900">Suppliers</h1>
           <p className="text-gray-500 mt-1">Manage supplier accounts</p>
         </div>
-        <Button onClick={() => setShowAddModal(true)} className="flex items-center gap-2">
+        <Button
+          onClick={() => setShowAddModal(true)}
+          className="flex items-center gap-2"
+        >
           <FiUserPlus className="w-4 h-4" />
           Add Supplier
         </Button>
@@ -188,8 +208,9 @@ const SupplierList = () => {
       {/* Info Banner */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <p className="text-sm text-blue-800">
-          <strong>Note:</strong> Suppliers are users managed through Asgardeo. 
-          When you add a supplier, they will receive an email to set their password and can then log in.
+          <strong>Note:</strong> Suppliers are users managed through Asgardeo.
+          When you add a supplier, they will receive an email to set their
+          password and can then log in.
         </p>
       </div>
 
@@ -219,13 +240,15 @@ const SupplierList = () => {
             <input
               type="email"
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
               placeholder="supplier@example.com"
               required
             />
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -234,7 +257,9 @@ const SupplierList = () => {
               <input
                 type="text"
                 value={formData.firstName}
-                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, firstName: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 placeholder="John"
                 required
@@ -247,14 +272,16 @@ const SupplierList = () => {
               <input
                 type="text"
                 value={formData.lastName}
-                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, lastName: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 placeholder="Doe"
                 required
               />
             </div>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Phone
@@ -262,7 +289,9 @@ const SupplierList = () => {
             <input
               type="tel"
               value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, phone: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
               placeholder="+1 234 567 8900"
             />
@@ -270,7 +299,8 @@ const SupplierList = () => {
 
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
             <p className="text-sm text-yellow-800">
-              The supplier will receive an email to set their password and activate their account.
+              The supplier will receive an email to set their password and
+              activate their account.
             </p>
           </div>
 
@@ -287,6 +317,48 @@ const SupplierList = () => {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setSupplierToDelete(null);
+        }}
+        title="Delete Supplier"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-700">
+            Are you sure you want to delete supplier{" "}
+            <strong>{supplierToDelete?.email}</strong>?
+          </p>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+            <p className="text-sm text-red-800">
+              This action cannot be undone. The supplier will be permanently
+              removed from the system.
+            </p>
+          </div>
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setShowDeleteModal(false);
+                setSupplierToDelete(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              onClick={handleDeleteConfirm}
+            >
+              Delete Supplier
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

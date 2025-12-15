@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import Card from "../../components/common/Card";
-import Button from "../../components/common/Button";
-import Input from "../../components/common/Input";
 import Badge from "../../components/common/Badge";
+import Button from "../../components/common/Button";
+import Card from "../../components/common/Card";
+import Input from "../../components/common/Input";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import { useAuth } from "../../hooks/useAuth";
 import { productService } from "../../services/productService";
@@ -21,6 +21,7 @@ const ProductLifecycleManagement = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [history, setHistory] = useState([]);
+  const [categories, setCategories] = useState([]);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -38,15 +39,18 @@ const ProductLifecycleManagement = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [statsRes, pendingRes, productsRes] = await Promise.all([
-        apiClient.get(API.product.lifecycleStats()),
-        apiClient.get(API.product.pendingApprovals()),
-        productService.getAllProducts(),
-      ]);
+      const [statsRes, pendingRes, productsRes, categoriesRes] =
+        await Promise.all([
+          productService.getProductLifecycleStats(),
+          productService.getPendingApprovals(),
+          productService.getAllProducts(),
+          productService.getAllCategories(),
+        ]);
 
-      setLifecycleStats(statsRes.data.data || {});
-      setPendingApprovals(pendingRes.data.data || []);
+      setLifecycleStats(statsRes.data || {});
+      setPendingApprovals(pendingRes.data || []);
       setProducts(productsRes.data || []);
+      setCategories(categoriesRes.data || []);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -59,7 +63,11 @@ const ProductLifecycleManagement = () => {
     try {
       await apiClient.post(API.product.lifecycle(), {
         ...formData,
-        created_by: 1,
+        category_id: formData.category_id
+          ? parseInt(formData.category_id)
+          : null,
+        unit_price: parseFloat(formData.unit_price),
+        created_by: user?.sub || user?.email || "system",
       });
       toast.success("Product created successfully in DRAFT state!");
       setShowCreateModal(false);
@@ -80,8 +88,8 @@ const ProductLifecycleManagement = () => {
   const handleTransition = async (productId, action) => {
     try {
       await apiClient.post(API.product.transition(productId, action), {
-        userId: 1,
-        notes: `${action} action`,
+        userId: user?.sub || user?.email || "system",
+        notes: `${action.replace(/-/g, " ")} by ${user?.username || "admin"}`,
       });
       toast.success(`Product ${action} successfully!`);
       fetchData();
@@ -297,15 +305,26 @@ const ProductLifecycleManagement = () => {
                   }
                   required
                 />
-                <Input
-                  label="Category ID"
-                  type="number"
-                  value={formData.category_id}
-                  onChange={(e) =>
-                    setFormData({ ...formData, category_id: e.target.value })
-                  }
-                  required
-                />
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Category <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={formData.category_id}
+                    onChange={(e) =>
+                      setFormData({ ...formData, category_id: e.target.value })
+                    }
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  >
+                    <option value="">Select a category</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <Input
                   label="Unit Price"
                   type="number"

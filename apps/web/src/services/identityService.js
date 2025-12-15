@@ -10,7 +10,7 @@ export const identityService = {
   // ============================================
   // Supplier User Management
   // ============================================
-  
+
   /**
    * Get all suppliers (users in supplier group)
    */
@@ -24,14 +24,17 @@ export const identityService = {
    * @param {Object} supplierData - { email, firstName, lastName, phone }
    */
   createSupplier: async (supplierData) => {
-    const response = await apiClient.post(API.identity.suppliers(), supplierData);
+    const response = await apiClient.post(
+      API.identity.suppliers(),
+      supplierData
+    );
     return response.data;
   },
 
   // ============================================
   // Warehouse Staff User Management
   // ============================================
-  
+
   /**
    * Get all warehouse staff (users in warehouse_staff group)
    */
@@ -52,7 +55,7 @@ export const identityService = {
   // ============================================
   // Generic User Operations
   // ============================================
-  
+
   /**
    * Get user by ID
    */
@@ -72,7 +75,7 @@ export const identityService = {
   // ============================================
   // Group Management
   // ============================================
-  
+
   /**
    * List all groups
    */

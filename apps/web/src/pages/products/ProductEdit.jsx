@@ -2,6 +2,7 @@ import { ArrowLeft, Save } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate, useParams } from "react-router-dom";
+import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
 import Card from "../../components/common/Card";
 import Input from "../../components/common/Input";
@@ -13,6 +14,7 @@ const ProductEdit = () => {
   const { id } = useParams();
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
+  const [categories, setCategories] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -21,14 +23,17 @@ const ProductEdit = () => {
     category_id: "",
     size: "",
     color: "",
-    is_active: true,
+    lifecycle_state: "",
   });
 
   const fetchProduct = useCallback(async () => {
     try {
       setFetching(true);
-      const response = await productService.getProductById(id);
-      const product = response.data;
+      const [productRes, categoriesRes] = await Promise.all([
+        productService.getProductById(id),
+        productService.getAllCategories(),
+      ]);
+      const product = productRes.data;
 
       setFormData({
         name: product.name || "",
@@ -38,8 +43,9 @@ const ProductEdit = () => {
         category_id: product.category_id || "",
         size: product.size || "",
         color: product.color || "",
-        is_active: product.is_active ?? true,
+        lifecycle_state: product.lifecycle_state || "draft",
       });
+      setCategories(categoriesRes.data || []);
     } catch (error) {
       toast.error("Failed to fetch product details");
       console.error("Error fetching product:", error);
@@ -66,25 +72,18 @@ const ProductEdit = () => {
     setLoading(true);
 
     try {
-      // Prepare data
+      // Prepare data - only basic info, lifecycle state is managed separately
       const productData = {
         name: formData.name,
         sku: formData.sku,
         unit_price: parseFloat(formData.unit_price) || 0,
         description: formData.description || "",
-        is_active: formData.is_active,
+        category_id: formData.category_id
+          ? parseInt(formData.category_id, 10)
+          : null,
+        size: formData.size || "",
+        color: formData.color || "",
       };
-
-      // Add optional fields only if they have values
-      if (formData.category_id) {
-        productData.category_id = parseInt(formData.category_id, 10);
-      }
-      if (formData.size) {
-        productData.size = formData.size;
-      }
-      if (formData.color) {
-        productData.color = formData.color;
-      }
 
       await productService.updateProduct(id, productData);
       toast.success("Product updated successfully");
@@ -114,7 +113,10 @@ const ProductEdit = () => {
         </Button>
         <div>
           <h1 className="text-3xl font-bold text-dark-900">Edit Product</h1>
-          <p className="text-dark-600 mt-2">Update product information</p>
+          <p className="text-dark-600 mt-2">
+            Update product information (use Product Lifecycle page to change
+            status)
+          </p>
         </div>
       </div>
 
@@ -169,19 +171,46 @@ const ProductEdit = () => {
               placeholder="e.g., Red, Blue, Green"
             />
 
-            <div className="flex items-center">
-              <label className="flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="is_active"
-                  checked={formData.is_active}
-                  onChange={handleChange}
-                  className="mr-2 h-4 w-4"
-                />
-                <span className="text-sm font-medium text-dark-700">
-                  Active Product
-                </span>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Category <span className="text-red-500">*</span>
               </label>
+              <select
+                name="category_id"
+                value={formData.category_id}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              >
+                <option value="">Select a category</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Lifecycle State
+              </label>
+              <div className="flex items-center gap-2">
+                <Badge
+                  color={
+                    formData.lifecycle_state === "active"
+                      ? "green"
+                      : formData.lifecycle_state === "draft"
+                      ? "gray"
+                      : "yellow"
+                  }
+                >
+                  {formData.lifecycle_state}
+                </Badge>
+                <span className="text-sm text-gray-500">
+                  (Managed via Product Lifecycle page)
+                </span>
+              </div>
             </div>
 
             <div className="md:col-span-2">

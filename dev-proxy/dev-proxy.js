@@ -53,16 +53,45 @@ app.get("/api/gateway/health", (req, res) => {
 
 // API routes - proxy to backend services
 Object.entries(SERVICES).forEach(([service, url]) => {
-  app.use(`/api/${service}`, (req, res) => {
-    // Rewrite the path to remove /api/<service> prefix
-    req.url = req.url === "" ? "/" : req.url;
-    proxy.web(req, res, { target: url });
+  app.use(`/api/${service}`, (req, res, next) => {
+    // Express strips /api/<service> from req.url
+    // Save true original path for logging
+    const originalPath = req.originalUrl || req.baseUrl + req.url;
+
+    // Normalize the path for proxying
+    if (!req.url || req.url === "") {
+      req.url = "/";
+    }
+
+    console.log(`  → Proxying ${service}: ${originalPath} to ${url}${req.url}`);
+
+    proxy.web(
+      req,
+      res,
+      {
+        target: url,
+        changeOrigin: true,
+      }
+      // Note: proxy.on("error") handler below will handle errors
+    );
   });
 });
 
 // Frontend - proxy everything else to Vite dev server
 app.use((req, res) => {
   proxy.web(req, res, { target: FRONTEND_URL });
+});
+
+// Express error handling middleware (must be after all routes)
+app.use((err, req, res, next) => {
+  console.error("Express error handler:", err.message);
+  if (!res.headersSent) {
+    res.status(err.status || 500).json({
+      success: false,
+      error: "Internal Server Error",
+      message: err.message,
+    });
+  }
 });
 
 // Create HTTP server
@@ -80,12 +109,9 @@ server.on("upgrade", (req, socket, head) => {
 // Error handling
 proxy.on("error", (err, req, res) => {
   console.error("❌ Proxy error:", err.message);
-  // For WS upgrades, `res` can be a net.Socket; ensure it doesn't hang.
-  if (res && typeof res.destroy === "function" && !res.writableEnded) {
-    res.destroy();
-    return;
-  }
-  if (res.writeHead && !res.headersSent) {
+
+  // Check if response is a normal HTTP response and headers not sent
+  if (res && !res.headersSent && typeof res.writeHead === "function") {
     res.writeHead(502, { "Content-Type": "application/json" });
     res.end(
       JSON.stringify({
@@ -93,6 +119,12 @@ proxy.on("error", (err, req, res) => {
         message: err.message,
       })
     );
+    return;
+  }
+
+  // If response is broken but socket exists and is writable, destroy the socket
+  if (res && res.socket && !res.socket.destroyed) {
+    res.socket.destroy();
   }
 });
 

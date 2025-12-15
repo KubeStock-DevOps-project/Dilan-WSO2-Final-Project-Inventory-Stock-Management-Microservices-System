@@ -1,15 +1,20 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Save } from "lucide-react";
-import Card from "../../components/common/Card";
-import Button from "../../components/common/Button";
-import Input from "../../components/common/Input";
-import { productService } from "../../services/productService";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+import Button from "../../components/common/Button";
+import Card from "../../components/common/Card";
+import Input from "../../components/common/Input";
+import { useAuth } from "../../hooks/useAuth";
+import { productService } from "../../services/productService";
+import apiClient from "../../utils/axios";
+import { API } from "../../utils/constants";
 
 const ProductAdd = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -19,6 +24,20 @@ const ProductAdd = () => {
     size: "",
     color: "",
   });
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await productService.getAllCategories();
+      setCategories(response || []);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      toast.error("Failed to load categories");
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -33,28 +52,24 @@ const ProductAdd = () => {
     setLoading(true);
 
     try {
-      // Prepare data - remove empty strings and is_active for creation
+      // Create product through lifecycle workflow (starts in DRAFT)
       const productData = {
         name: formData.name,
-        sku: formData.sku,
         unit_price: parseFloat(formData.unit_price),
         description: formData.description || "",
+        category_id: formData.category_id
+          ? parseInt(formData.category_id)
+          : null,
+        size: formData.size || "",
+        color: formData.color || "",
+        created_by: user?.sub || user?.email || "system",
       };
 
-      // Add optional fields only if they have values
-      if (formData.category_id) {
-        productData.category_id = parseInt(formData.category_id);
-      }
-      if (formData.size) {
-        productData.size = formData.size;
-      }
-      if (formData.color) {
-        productData.color = formData.color;
-      }
-
-      await productService.createProduct(productData);
-      toast.success("Product created successfully");
-      navigate("/products");
+      await apiClient.post(API.product.lifecycle(), productData);
+      toast.success(
+        "Product created successfully in DRAFT state! It will need approval before activation."
+      );
+      navigate("/products/lifecycle");
     } catch (error) {
       toast.error("Failed to create product");
       console.error("Error creating product:", error);
@@ -77,7 +92,7 @@ const ProductAdd = () => {
         <div>
           <h1 className="text-3xl font-bold text-dark-900">Add New Product</h1>
           <p className="text-dark-600 mt-2">
-            Create a new product in your catalog
+            Create a new product (starts in DRAFT state for approval workflow)
           </p>
         </div>
       </div>
@@ -95,14 +110,25 @@ const ProductAdd = () => {
               placeholder="Enter product name"
             />
 
-            <Input
-              label="SKU"
-              name="sku"
-              value={formData.sku}
-              onChange={handleChange}
-              required
-              placeholder="Enter SKU"
-            />
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Category <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="category_id"
+                value={formData.category_id}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              >
+                <option value="">Select a category</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <Input
               label="Unit Price"

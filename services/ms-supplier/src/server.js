@@ -10,9 +10,9 @@ const {
   getContentType,
   updateDbMetrics,
 } = require("./middlewares/metrics");
-const supplierRoutes = require("./routes/supplier.routes");
+// const supplierRoutes = require("./routes/supplier.routes"); // REMOVED: Suppliers managed via Asgardeo
 const purchaseOrderRoutes = require("./routes/purchaseOrder.routes");
-const supplierRatingRoutes = require("./routes/supplierRating.routes");
+// const supplierRatingRoutes = require("./routes/supplierRating.routes"); // REMOVED: Ratings table removed
 const {
   errorHandler,
   notFoundHandler,
@@ -28,7 +28,10 @@ const dbConfig = {
   database: process.env.DB_NAME || "supplier_db",
   user: process.env.DB_USER || "postgres",
   password: process.env.DB_PASSWORD || "postgres",
-  ssl: process.env.DB_HOST && process.env.DB_HOST.includes('rds.amazonaws.com') ? { rejectUnauthorized: false } : false,
+  ssl:
+    process.env.DB_HOST && process.env.DB_HOST.includes("rds.amazonaws.com")
+      ? { rejectUnauthorized: false }
+      : false,
 };
 
 setInterval(() => {
@@ -73,9 +76,10 @@ app.get("/metrics", async (req, res) => {
 });
 
 // Routes - gateway strips /api/supplier prefix before forwarding
-app.use("/ratings", supplierRatingRoutes);
+// Note: Supplier CRUD and ratings are now handled via Asgardeo identity service
+// app.use("/ratings", supplierRatingRoutes); // REMOVED: Ratings table removed
 app.use("/purchase-orders", purchaseOrderRoutes);
-app.use("/", supplierRoutes);
+// app.use("/", supplierRoutes); // REMOVED: Suppliers managed via Asgardeo
 
 // Error handling
 app.use(notFoundHandler);
@@ -85,7 +89,7 @@ app.use((req, res) => {
   res.status(404).json({ success: false, message: "Route not found" });
 });
 
-const HOST = process.env.HOST || '127.0.0.1';
+const HOST = process.env.HOST || "127.0.0.1";
 
 // Start server after migrations
 const startServer = async () => {

@@ -12,9 +12,11 @@ export const options = {
 
 const GATEWAY_URL = __ENV.GATEWAY_URL || 'http://localhost:5173';
 const ACCESS_TOKEN = __ENV.ACCESS_TOKEN;
+const KONG_CONSUMER_HEADER = __ENV.KONG_CONSUMER_HEADER || 'test-runner';
 
 const headers = {
     'Content-Type': 'application/json',
+    'X-Consumer-Username': KONG_CONSUMER_HEADER,
 };
 if (ACCESS_TOKEN) {
     headers['Authorization'] = `Bearer ${ACCESS_TOKEN}`;

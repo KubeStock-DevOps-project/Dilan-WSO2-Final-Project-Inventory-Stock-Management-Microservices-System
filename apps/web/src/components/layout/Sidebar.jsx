@@ -145,6 +145,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             <li key={item.path}>
               <NavLink
                 to={item.path}
+                end
                 className={({ isActive }) =>
                   cn(
                     "flex items-center px-4 py-3 rounded-lg transition-all duration-200",

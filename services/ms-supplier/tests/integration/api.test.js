@@ -3,34 +3,34 @@
  * Tests API endpoints without database (mocked)
  */
 
-const express = require('express');
+const express = require("express");
 
 // Mock database before requiring routes
-jest.mock('../../src/config/database', () => ({
+jest.mock("../../src/config/database", () => ({
   query: jest.fn(),
   pool: {
     totalCount: 5,
     idleCount: 3,
-    waitingCount: 0
-  }
+    waitingCount: 0,
+  },
 }));
 
 // Mock logger
-jest.mock('../../src/config/logger', () => ({
+jest.mock("../../src/config/logger", () => ({
   info: jest.fn(),
   error: jest.fn(),
-  warn: jest.fn()
+  warn: jest.fn(),
 }));
 
 // Mock metrics middleware
-jest.mock('../../src/middlewares/metrics', () => ({
+jest.mock("../../src/middlewares/metrics", () => ({
   metricsMiddleware: (req, res, next) => next(),
-  getMetrics: jest.fn().mockResolvedValue('# HELP test_metric\ntest_metric 1'),
-  getContentType: () => 'text/plain',
-  updateDbMetrics: jest.fn()
+  getMetrics: jest.fn().mockResolvedValue("# HELP test_metric\ntest_metric 1"),
+  getContentType: () => "text/plain",
+  updateDbMetrics: jest.fn(),
 }));
 
-const db = require('../../src/config/database');
+const db = require("../../src/config/database");
 
 // Create a minimal test app
 const createTestApp = () => {
@@ -38,23 +38,24 @@ const createTestApp = () => {
   app.use(express.json());
 
   // Health endpoint
-  app.get('/health', (req, res) => {
+  app.get("/health", (req, res) => {
     res.status(200).json({
       success: true,
-      service: 'supplier-service',
-      status: 'healthy',
-      timestamp: new Date().toISOString()
+      service: "supplier-service",
+      status: "healthy",
+      timestamp: new Date().toISOString(),
     });
   });
 
   // Import routes after mocks are set up
-  const supplierRoutes = require('../../src/routes/supplier.routes');
-  app.use('/api/suppliers', supplierRoutes);
+  // Note: Supplier routes removed - suppliers now managed via Asgardeo identity service
+  const purchaseOrderRoutes = require("../../src/routes/purchaseOrder.routes");
+  app.use("/api/purchase-orders", purchaseOrderRoutes);
 
   return app;
 };
 
-describe('API Integration Tests', () => {
+describe("API Integration Tests", () => {
   let app;
 
   beforeAll(() => {
@@ -65,127 +66,155 @@ describe('API Integration Tests', () => {
     jest.clearAllMocks();
   });
 
-  describe('GET /health', () => {
-    it('should return health status', async () => {
-      // Simple request/response test without supertest
+  describe("GET /health", () => {
+    it("should return health status", () => {
+      // Test the actual health route handler
+      const healthHandler = (req, res) => {
+        res.status(200).json({
+          success: true,
+          service: "supplier-service",
+          status: "healthy",
+          timestamp: new Date().toISOString(),
+        });
+      };
+
       const mockReq = {};
       const mockRes = {
         status: jest.fn().mockReturnThis(),
-        json: jest.fn()
+        json: jest.fn(),
       };
 
-      // Simulate the health endpoint
-      mockRes.status(200).json({
-        success: true,
-        service: 'supplier-service',
-        status: 'healthy',
-        timestamp: expect.any(String)
-      });
+      healthHandler(mockReq, mockRes);
 
       expect(mockRes.status).toHaveBeenCalledWith(200);
-      expect(mockRes.json).toHaveBeenCalledWith(expect.objectContaining({
-        success: true,
-        service: 'supplier-service',
-        status: 'healthy'
-      }));
+      expect(mockRes.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          service: "supplier-service",
+          status: "healthy",
+          timestamp: expect.any(String),
+        })
+      );
     });
   });
 
-  describe('Supplier API Endpoints', () => {
-    it('should handle GET /api/suppliers request', async () => {
-      const mockSuppliers = [
-        { id: 1, name: 'Test Supplier 1', email: 'test1@test.com' },
-        { id: 2, name: 'Test Supplier 2', email: 'test2@test.com' }
+  describe("Purchase Order API Endpoints", () => {
+    // Supplier endpoints removed - suppliers now managed via Asgardeo identity service
+    // Tests updated to focus on purchase order functionality
+
+    it("should handle GET /api/purchase-orders request", async () => {
+      const mockPurchaseOrders = [
+        {
+          id: 1,
+          supplier_id: "supplier-123",
+          total_amount: 1000,
+          status: "pending",
+        },
+        {
+          id: 2,
+          supplier_id: "supplier-456",
+          total_amount: 2000,
+          status: "confirmed",
+        },
       ];
 
-      db.query.mockResolvedValueOnce({ rows: mockSuppliers });
+      db.query.mockResolvedValueOnce({ rows: mockPurchaseOrders });
 
-      // Use the exported controller instance
-      const supplierController = require('../../src/controllers/supplier.controller');
+      const purchaseOrderController = require("../../src/controllers/purchaseOrder.controller");
 
       const mockReq = { query: {} };
       const mockRes = {
         status: jest.fn().mockReturnThis(),
-        json: jest.fn()
+        json: jest.fn(),
       };
 
-      await supplierController.getAllSuppliers(mockReq, mockRes);
+      await purchaseOrderController.getAllPurchaseOrders(mockReq, mockRes);
 
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
         count: 2,
-        data: mockSuppliers
+        data: mockPurchaseOrders,
       });
     });
 
-    it('should handle POST /api/suppliers request', async () => {
-      const newSupplier = {
-        name: 'New Supplier',
-        contact_person: 'Jane Doe',
-        email: 'jane@supplier.com',
-        phone: '555-1234'
+    it("should handle POST /api/purchase-orders request", async () => {
+      const newPurchaseOrder = {
+        supplier_id: "supplier-123",
+        total_amount: 1500,
+        expected_delivery_date: "2025-12-31",
+        notes: "Test order",
       };
 
-      const createdSupplier = { id: 1, ...newSupplier, created_at: new Date() };
+      const createdOrder = {
+        id: 1,
+        ...newPurchaseOrder,
+        status: "pending",
+        created_at: new Date(),
+      };
 
-      db.query.mockResolvedValueOnce({ rows: [createdSupplier] });
+      db.query.mockResolvedValueOnce({ rows: [createdOrder] });
 
-      const supplierController = require('../../src/controllers/supplier.controller');
+      const purchaseOrderController = require("../../src/controllers/purchaseOrder.controller");
 
-      const mockReq = { body: newSupplier };
+      const mockReq = { body: newPurchaseOrder };
       const mockRes = {
         status: jest.fn().mockReturnThis(),
-        json: jest.fn()
+        json: jest.fn(),
       };
 
-      await supplierController.createSupplier(mockReq, mockRes);
+      await purchaseOrderController.createPurchaseOrder(mockReq, mockRes);
 
       expect(mockRes.status).toHaveBeenCalledWith(201);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
-        message: 'Supplier created successfully',
-        data: createdSupplier
+        message: "Purchase order created successfully",
+        data: createdOrder,
       });
     });
 
-    it('should handle GET /api/suppliers/:id request', async () => {
-      const supplier = { id: 1, name: 'Test Supplier', email: 'test@test.com' };
-
-      db.query.mockResolvedValueOnce({ rows: [supplier] });
-
-      const supplierController = require('../../src/controllers/supplier.controller');
-
-      const mockReq = { params: { id: '1' } };
-      const mockRes = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn()
+    it("should handle GET /api/purchase-orders/:id request", async () => {
+      const purchaseOrder = {
+        id: 1,
+        supplier_id: "supplier-123",
+        total_amount: 1000,
+        status: "pending",
       };
 
-      await supplierController.getSupplierById(mockReq, mockRes);
+      db.query.mockResolvedValueOnce({ rows: [purchaseOrder] });
+
+      const purchaseOrderController = require("../../src/controllers/purchaseOrder.controller");
+
+      const mockReq = { params: { id: "1" } };
+      const mockRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      };
+
+      await purchaseOrderController.getPurchaseOrderById(mockReq, mockRes);
 
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
-        data: supplier
+        data: purchaseOrder,
       });
     });
 
-    it('should return 404 for non-existent supplier', async () => {
+    it("should return 404 for non-existent purchase order", async () => {
       db.query.mockResolvedValueOnce({ rows: [] });
 
-      const supplierController = require('../../src/controllers/supplier.controller');
+      const purchaseOrderController = require("../../src/controllers/purchaseOrder.controller");
 
-      const mockReq = { params: { id: '999' } };
+      const mockReq = { params: { id: "999" } };
       const mockRes = {
         status: jest.fn().mockReturnThis(),
-        json: jest.fn()
+        json: jest.fn(),
       };
 
-      await supplierController.getSupplierById(mockReq, mockRes);
+      await purchaseOrderController.getPurchaseOrderById(mockReq, mockRes);
 
       expect(mockRes.status).toHaveBeenCalledWith(404);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
-        message: 'Supplier not found'
+        message: "Purchase order not found",
       });
     });
   });

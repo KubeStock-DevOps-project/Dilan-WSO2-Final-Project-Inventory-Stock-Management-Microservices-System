@@ -41,7 +41,9 @@ export const supplierService = {
 
   // Purchase Orders
   getAllPurchaseOrders: async (params) => {
-    const response = await apiClient.get(API.supplier.purchaseOrders(), { params });
+    const response = await apiClient.get(API.supplier.purchaseOrders(), {
+      params,
+    });
     return response.data;
   },
 
@@ -51,12 +53,18 @@ export const supplierService = {
   },
 
   createPurchaseOrder: async (orderData) => {
-    const response = await apiClient.post(API.supplier.purchaseOrders(), orderData);
+    const response = await apiClient.post(
+      API.supplier.purchaseOrders(),
+      orderData
+    );
     return response.data;
   },
 
   updatePurchaseOrder: async (id, orderData) => {
-    const response = await apiClient.put(API.supplier.purchaseOrderById(id), orderData);
+    const response = await apiClient.put(
+      API.supplier.purchaseOrderById(id),
+      orderData
+    );
     return response.data;
   },
 
@@ -66,23 +74,34 @@ export const supplierService = {
   },
 
   updatePOStatus: async (id, status, notes) => {
-    const response = await apiClient.patch(API.supplier.purchaseOrderStatus(id), { status, notes });
+    const response = await apiClient.patch(
+      API.supplier.purchaseOrderStatus(id),
+      { status, notes }
+    );
     return response.data;
   },
 
   receivePurchaseOrder: async (id, data) => {
-    const response = await apiClient.patch(API.supplier.purchaseOrderReceive(id), data);
+    const response = await apiClient.patch(
+      API.supplier.purchaseOrderReceive(id),
+      data
+    );
     return response.data;
   },
 
   // For suppliers to respond to requests
   getPendingRequests: async (supplierId) => {
-    const response = await apiClient.get(API.supplier.supplierPending(supplierId));
+    const response = await apiClient.get(
+      API.supplier.supplierPending(supplierId)
+    );
     return response.data;
   },
 
   respondToRequest: async (id, response_status, notes) => {
-    const response = await apiClient.post(API.supplier.supplierResponse(id), { response_status, notes });
+    const response = await apiClient.post(API.supplier.supplierResponse(id), {
+      response_status,
+      notes,
+    });
     return response.data;
   },
 
@@ -93,7 +112,10 @@ export const supplierService = {
   },
 
   rateSupplier: async (supplierId, ratingData) => {
-    const response = await apiClient.post(API.supplier.ratings(supplierId), ratingData);
+    const response = await apiClient.post(
+      API.supplier.ratings(supplierId),
+      ratingData
+    );
     return response.data;
   },
 };
