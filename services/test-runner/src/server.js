@@ -210,6 +210,7 @@ app.post('/api/tests/run', async (req, res) => {
             if (line.trim()) {
                 const logLine = line;
                 runningTests[testId].logs.push(logLine);
+                console.log(logLine); // Print to stdout for Loki
                 try {
                     fs.appendFileSync(logFile, logLine + '\n');
                 } catch (e) { /* ignore write errors to avoid crash */ }
@@ -223,6 +224,7 @@ app.post('/api/tests/run', async (req, res) => {
             if (line.trim()) {
                 const logLine = `[stderr] ${line}`;
                 runningTests[testId].logs.push(logLine);
+                console.error(logLine); // Print to stderr for Loki
                 try {
                     fs.appendFileSync(logFile, logLine + '\n');
                 } catch (e) { /* ignore */ }
