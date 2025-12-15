@@ -66,7 +66,7 @@ export default function () {
     }
 
     // 4. Check Supplier Service through Gateway
-    const supplierUrl = __ENV.SUPPLIER_URL || `${GATEWAY_URL}/api/supplier`;
+    const supplierUrl = __ENV.SUPPLIER_URL || `${GATEWAY_URL}/api/supplier/health`;
     const resSupplier = http.get(supplierUrl, params);
     const supplierOk = resSupplier.status === 200;
     check(resSupplier, {
