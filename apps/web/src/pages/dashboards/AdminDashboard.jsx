@@ -56,8 +56,10 @@ const AdminDashboard = () => {
         totalInventory:
           inventory.data?.reduce((sum, item) => sum + item.quantity, 0) || 0,
         lowStockItems:
-          inventory.data?.filter((item) => item.quantity < item.min_quantity)
-            .length || 0,
+          inventory.data?.filter(
+            (item) =>
+              (item.available_quantity || 0) <= (item.reorder_level || 0)
+          ).length || 0,
         totalOrders: orderData.total || 0,
         pendingOrders: orderData.pending || 0,
         totalRevenue: orderData.totalRevenue || 0,

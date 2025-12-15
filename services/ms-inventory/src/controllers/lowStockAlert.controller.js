@@ -2,27 +2,60 @@ const db = require("../config/database");
 const logger = require("../config/logger");
 
 class LowStockAlertController {
-  // Get active low stock alerts
+  // Get active low stock alerts - items below reorder level
   async getLowStockAlerts(req, res) {
     try {
-      const { status = "active" } = req.query;
+      const ProductServiceClient = require("../services/productService.client");
 
-      const result = await db.query(
-        `SELECT 
-          lsa.*,
-          i.warehouse_location,
-          i.reorder_level
-         FROM low_stock_alerts lsa
-         JOIN inventory i ON i.product_id = lsa.product_id
-         WHERE lsa.status = $1
-         ORDER BY lsa.alerted_at DESC`,
-        [status]
+      // Get all inventory items where available stock <= reorder level
+      const query = `
+        SELECT 
+          i.*,
+          (i.quantity - COALESCE(i.reserved_quantity, 0)) as available_quantity
+        FROM inventory i
+        WHERE (i.quantity - COALESCE(i.reserved_quantity, 0)) <= i.reorder_level
+          AND (i.quantity - COALESCE(i.reserved_quantity, 0)) >= 0
+        ORDER BY 
+          CASE 
+            WHEN (i.quantity - COALESCE(i.reserved_quantity, 0)) = 0 THEN 0
+            ELSE 1
+          END,
+          (i.quantity - COALESCE(i.reserved_quantity, 0)) ASC
+      `;
+
+      const result = await db.query(query);
+
+      // Enrich with product details
+      const enrichedData = await Promise.all(
+        result.rows.map(async (item) => {
+          try {
+            const product = await ProductServiceClient.getProductById(
+              item.product_id
+            );
+            return {
+              ...item,
+              product_name: product?.name || "Unknown Product",
+              product_sku: product?.sku || item.sku,
+              unit_price: product?.unit_price || 0,
+            };
+          } catch (error) {
+            logger.warn(
+              `Could not fetch product details for product_id: ${item.product_id}`
+            );
+            return {
+              ...item,
+              product_name: "Unknown Product",
+              product_sku: item.sku,
+              unit_price: 0,
+            };
+          }
+        })
       );
 
       res.json({
         success: true,
-        count: result.rows.length,
-        data: result.rows,
+        count: enrichedData.length,
+        data: enrichedData,
       });
     } catch (error) {
       logger.error("Get low stock alerts error:", error);
@@ -91,44 +124,14 @@ class LowStockAlertController {
     }
   }
 
-  // Resolve alert (mark as resolved)
+  // Resolve alert - alerts are auto-resolved when inventory is updated
+  // Frontend should call PUT /inventory/:id to update stock levels
   async resolveAlert(req, res) {
-    try {
-      const { id } = req.params;
-      const userId = req.user?.id;
-
-      const result = await db.query(
-        `UPDATE low_stock_alerts
-         SET status = 'resolved',
-             resolved_at = CURRENT_TIMESTAMP,
-             resolved_by = $2
-         WHERE id = $1
-         RETURNING *`,
-        [id, userId]
-      );
-
-      if (result.rows.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: "Alert not found",
-        });
-      }
-
-      logger.info(`Low stock alert ${id} resolved by user ${userId}`);
-
-      res.json({
-        success: true,
-        message: "Alert resolved successfully",
-        data: result.rows[0],
-      });
-    } catch (error) {
-      logger.error("Resolve alert error:", error);
-      res.status(500).json({
-        success: false,
-        message: "Error resolving alert",
-        error: error.message,
-      });
-    }
+    return res.status(410).json({
+      success: false,
+      message:
+        "This endpoint is deprecated. Use PUT /inventory/:id to update stock levels directly.",
+    });
   }
 
   // Get reorder suggestions
@@ -138,14 +141,16 @@ class LowStockAlertController {
         `SELECT 
           i.product_id,
           i.sku,
-          i.quantity as current_quantity,
+          i.quantity,
+          i.reserved_quantity,
+          (i.quantity - COALESCE(i.reserved_quantity, 0)) as available_quantity,
           i.reorder_level,
           i.max_stock_level,
-          (i.max_stock_level - i.quantity) as suggested_order_quantity,
+          GREATEST(i.max_stock_level - (i.quantity - COALESCE(i.reserved_quantity, 0)), 0) as suggested_order_quantity,
           i.warehouse_location
          FROM inventory i
-         WHERE i.quantity <= i.reorder_level
-         ORDER BY (i.reorder_level - i.quantity) DESC
+         WHERE (i.quantity - COALESCE(i.reserved_quantity, 0)) <= i.reorder_level
+         ORDER BY (i.reorder_level - (i.quantity - COALESCE(i.reserved_quantity, 0))) DESC
          LIMIT 50`
       );
 
@@ -169,17 +174,25 @@ class LowStockAlertController {
     try {
       const result = await db.query(
         `SELECT 
-          COUNT(*) FILTER (WHERE status = 'active') as active_alerts,
-          COUNT(*) FILTER (WHERE status = 'resolved') as resolved_alerts,
-          COUNT(*) FILTER (WHERE status = 'ignored') as ignored_alerts,
-          COUNT(*) as total_alerts
-         FROM low_stock_alerts
-         WHERE alerted_at >= CURRENT_DATE - INTERVAL '30 days'`
+          COUNT(*) FILTER (WHERE (quantity - COALESCE(reserved_quantity, 0)) <= reorder_level) as active_alerts,
+          COUNT(*) FILTER (WHERE (quantity - COALESCE(reserved_quantity, 0)) = 0) as critical_alerts,
+          COUNT(*) FILTER (WHERE (quantity - COALESCE(reserved_quantity, 0)) > reorder_level) as resolved_alerts,
+          COUNT(*) as total_items
+         FROM inventory`
       );
+
+      // Convert counts to numbers for frontend
+      const stats = {
+        active_alerts: parseInt(result.rows[0].active_alerts) || 0,
+        critical_alerts: parseInt(result.rows[0].critical_alerts) || 0,
+        resolved_alerts: parseInt(result.rows[0].resolved_alerts) || 0,
+        total_items: parseInt(result.rows[0].total_items) || 0,
+        ignored_alerts: 0, // We don't track ignored alerts anymore
+      };
 
       res.json({
         success: true,
-        data: result.rows[0],
+        data: stats,
       });
     } catch (error) {
       logger.error("Get alert stats error:", error);

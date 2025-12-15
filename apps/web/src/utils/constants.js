@@ -130,7 +130,7 @@ export const API = {
     supplierResponse: (id) =>
       buildUrl("supplier", `purchase-orders/${id}/supplier-response`),
     // Ratings
-    ratings: (supplierId) => buildUrl("supplier", `${supplierId}/ratings`),
+    ratings: (supplierId) => buildUrl("supplier", `ratings/${supplierId}`),
   },
 
   // ============================================

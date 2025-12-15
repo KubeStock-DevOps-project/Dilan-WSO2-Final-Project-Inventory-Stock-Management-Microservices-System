@@ -5,10 +5,10 @@
 const express = require("express");
 const router = express.Router();
 const userController = require("../controllers/user.controller");
-const { adminOnly } = require("../middleware/auth.middleware");
+const { authenticate, adminOnly } = require("../middleware/auth.middleware");
 
 // Supplier routes
-router.get("/suppliers", userController.listSuppliers);
+router.get("/suppliers", authenticate, userController.listSuppliers);
 router.post("/suppliers", adminOnly, userController.createSupplier);
 
 // Warehouse staff routes

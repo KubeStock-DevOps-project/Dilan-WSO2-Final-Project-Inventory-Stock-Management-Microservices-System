@@ -1,5 +1,9 @@
 const db = require("../config/database");
 const logger = require("../config/logger");
+const axios = require("axios");
+
+const INVENTORY_SERVICE_URL =
+  process.env.INVENTORY_SERVICE_URL || "http://localhost:3003";
 
 /**
  * Production-Grade Product Lifecycle Management
@@ -217,6 +221,8 @@ class ProductLifecycleService {
       case ProductLifecycleService.STATES.ACTIVE:
         // Validate product has all required data
         await this.validateProductForActivation(product);
+        // Create inventory entry if it doesn't exist
+        await this.ensureInventoryExists(product);
         break;
 
       default:
@@ -437,6 +443,77 @@ class ProductLifecycleService {
       throw error;
     } finally {
       client.release();
+    }
+  }
+
+  /**
+   * Ensure inventory record exists for product
+   */
+  async ensureInventoryExists(product) {
+    const timeout = 5000; // 5 second timeout
+
+    try {
+      // Check if inventory already exists
+      const checkResponse = await axios.get(
+        `${INVENTORY_SERVICE_URL}/product/${product.id}`,
+        { timeout }
+      );
+
+      if (checkResponse.data && checkResponse.data.data) {
+        logger.info(
+          `Inventory already exists for product ${product.id}, skipping creation`
+        );
+        return;
+      }
+    } catch (error) {
+      // Handle timeout
+      if (error.code === "ECONNABORTED" || error.code === "ETIMEDOUT") {
+        logger.error(
+          `Timeout checking inventory for product ${product.id}: ${error.message}`
+        );
+        return; // Don't fail activation on timeout
+      }
+
+      // If 404, inventory doesn't exist - create it
+      if (error.response && error.response.status === 404) {
+        try {
+          await axios.post(
+            `${INVENTORY_SERVICE_URL}`,
+            {
+              product_id: product.id,
+              sku: product.sku,
+              quantity: 0, // Start with zero, warehouse staff will add stock
+              warehouse_location: "DEFAULT",
+              reorder_level: 10,
+              max_stock_level: 1000,
+            },
+            { timeout }
+          );
+          logger.info(`Created inventory record for product ${product.id}`);
+        } catch (createError) {
+          if (
+            createError.code === "ECONNABORTED" ||
+            createError.code === "ETIMEDOUT"
+          ) {
+            logger.error(
+              `Timeout creating inventory for product ${product.id}: ${createError.message}`
+            );
+          } else {
+            logger.error(
+              `Failed to create inventory for product ${product.id}:`,
+              createError.message,
+              createError.response?.data || ""
+            );
+          }
+          // Don't fail the activation if inventory creation fails
+        }
+      } else {
+        logger.error(
+          `Error checking inventory for product ${product.id}:`,
+          error.message,
+          error.response?.data || ""
+        );
+      }
     }
   }
 }

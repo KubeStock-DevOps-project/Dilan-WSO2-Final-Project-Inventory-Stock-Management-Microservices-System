@@ -75,10 +75,17 @@ class InventoryController {
 
       const inventory = await Inventory.findAll(filters);
 
+      // Add calculated available_quantity to each item
+      const inventoryWithAvailable = inventory.map((item) => ({
+        ...item,
+        available_quantity:
+          (item.quantity || 0) - (item.reserved_quantity || 0),
+      }));
+
       res.json({
         success: true,
         count: inventory.length,
-        data: inventory,
+        data: inventoryWithAvailable,
       });
     } catch (error) {
       logger.error("Get all inventory error:", error);
@@ -106,10 +113,15 @@ class InventoryController {
       // Get product details
       const product = await ProductServiceClient.getProductById(productId);
 
+      // Add calculated available_quantity
+      const available_quantity =
+        (inventory.quantity || 0) - (inventory.reserved_quantity || 0);
+
       res.json({
         success: true,
         data: {
           ...inventory,
+          available_quantity,
           product_name: product.name,
           product_sku: product.sku,
         },
@@ -285,10 +297,18 @@ class InventoryController {
 
       logger.info(`Inventory updated for product ${productId}`);
 
+      // Add calculated available_quantity
+      const available_quantity =
+        (updatedInventory.quantity || 0) -
+        (updatedInventory.reserved_quantity || 0);
+
       res.json({
         success: true,
         message: "Inventory updated successfully",
-        data: updatedInventory,
+        data: {
+          ...updatedInventory,
+          available_quantity,
+        },
       });
     } catch (error) {
       logger.error("Update inventory error:", error);
@@ -314,14 +334,25 @@ class InventoryController {
         });
       }
 
-      const updatedInventory = await Inventory.update(inventory.product_id, updateData);
+      const updatedInventory = await Inventory.update(
+        inventory.product_id,
+        updateData
+      );
 
       logger.info(`Inventory updated for ID ${id}`);
+
+      // Add calculated available_quantity
+      const available_quantity =
+        (updatedInventory.quantity || 0) -
+        (updatedInventory.reserved_quantity || 0);
 
       res.json({
         success: true,
         message: "Inventory updated successfully",
-        data: updatedInventory,
+        data: {
+          ...updatedInventory,
+          available_quantity,
+        },
       });
     } catch (error) {
       logger.error("Update inventory by ID error:", error);
@@ -396,11 +427,18 @@ class InventoryController {
         });
       }
 
+      // Add calculated available_quantity (return new object, don't mutate)
+      const inventoryWithAvailable = {
+        ...inventory,
+        available_quantity:
+          (inventory.quantity || 0) - (inventory.reserved_quantity || 0),
+      };
+
       logger.info(`Inventory ${id} retrieved`);
 
       res.json({
         success: true,
-        data: inventory,
+        data: inventoryWithAvailable,
       });
     } catch (error) {
       logger.error("Get inventory by ID error:", error);
