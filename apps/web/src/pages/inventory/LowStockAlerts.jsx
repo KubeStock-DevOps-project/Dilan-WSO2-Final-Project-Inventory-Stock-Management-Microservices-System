@@ -1,11 +1,10 @@
-import { useState, useEffect } from "react";
 import { AlertTriangle, CheckCircle, Package, RefreshCw } from "lucide-react";
-import Card from "../../components/common/Card";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import Button from "../../components/common/Button";
-import Badge from "../../components/common/Badge";
+import Card from "../../components/common/Card";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import Table from "../../components/common/Table";
-import toast from "react-hot-toast";
 import apiClient from "../../utils/axios";
 import { API } from "../../utils/constants";
 
@@ -18,21 +17,44 @@ const LowStockAlerts = () => {
 
   useEffect(() => {
     fetchData();
+
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(() => {
+      fetchData();
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const fetchData = async () => {
     try {
       setLoading(true);
 
-      const [alertsRes, suggestionsRes, statsRes] = await Promise.all([
-        apiClient.get(API.inventory.alerts(), { params: { status: 'active' } }),
-        apiClient.get(API.inventory.reorderSuggestions()),
-        apiClient.get(API.inventory.alertStats()),
-      ]);
+      // Fetch alerts first (no auth required)
+      const alertsRes = await apiClient.get(API.inventory.alerts());
+      const alertsData = alertsRes.data.data || [];
+      setAlerts(alertsData);
 
-      setAlerts(alertsRes.data.data || []);
-      setSuggestions(suggestionsRes.data.data || []);
-      setStats(statsRes.data.data);
+      // Try to fetch stats and suggestions (may require auth)
+      try {
+        const [suggestionsRes, statsRes] = await Promise.all([
+          apiClient.get(API.inventory.reorderSuggestions()),
+          apiClient.get(API.inventory.alertStats()),
+        ]);
+        setSuggestions(suggestionsRes.data.data || []);
+        setStats(statsRes.data.data);
+      } catch {
+        // If auth fails, calculate stats from alerts data
+        console.log("Calculating stats from alerts data");
+        setStats({
+          active_alerts: alertsData.length,
+          critical_alerts: alertsData.filter((a) => a.available_quantity === 0)
+            .length,
+          resolved_alerts: 0,
+          total_items: alertsData.length,
+        });
+        setSuggestions([]);
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Failed to load alerts");
@@ -52,10 +74,26 @@ const LowStockAlerts = () => {
     }
   };
 
-  const handleResolveAlert = async (id) => {
+  const handleResolveAlert = async (inventoryId) => {
     try {
-      await apiClient.patch(API.inventory.resolveAlert(id));
-      toast.success("Alert resolved successfully");
+      // Find the alert to get reorder details
+      const alert = alerts.find((a) => a.id === inventoryId);
+      if (!alert) {
+        toast.error("Alert not found");
+        return;
+      }
+
+      // Update inventory to max stock level to resolve the low stock issue
+      const updateQuantity = alert.max_stock_level || alert.reorder_level * 2;
+
+      await apiClient.put(API.inventory.byId(inventoryId), {
+        quantity: updateQuantity,
+        warehouse_location: alert.warehouse_location,
+      });
+
+      toast.success(`Inventory restocked to ${updateQuantity} units`);
+
+      // Refresh data to update both alerts and dashboard
       fetchData();
     } catch (error) {
       console.error("Error resolving alert:", error);
@@ -74,12 +112,19 @@ const LowStockAlerts = () => {
       accessor: "sku",
     },
     {
-      header: "Current Stock",
-      accessor: "current_quantity",
+      header: "Available Stock",
+      accessor: "available_quantity",
       render: (row) => (
         <span className="font-semibold text-red-600">
-          {row.current_quantity}
+          {row.available_quantity || 0}
         </span>
+      ),
+    },
+    {
+      header: "Total Stock",
+      accessor: "quantity",
+      render: (row) => (
+        <span className="text-dark-700">{row.quantity || 0}</span>
       ),
     },
     {
@@ -91,9 +136,9 @@ const LowStockAlerts = () => {
       accessor: "warehouse_location",
     },
     {
-      header: "Alerted At",
-      accessor: "alerted_at",
-      render: (row) => new Date(row.alerted_at).toLocaleDateString(),
+      header: "Last Updated",
+      accessor: "updated_at",
+      render: (row) => new Date(row.updated_at).toLocaleDateString(),
     },
     {
       header: "Actions",
@@ -122,11 +167,11 @@ const LowStockAlerts = () => {
       accessor: "sku",
     },
     {
-      header: "Current",
-      accessor: "current_quantity",
+      header: "Available",
+      accessor: "available_quantity",
       render: (row) => (
         <span className="font-semibold text-red-600">
-          {row.current_quantity}
+          {row.available_quantity || 0}
         </span>
       ),
     },

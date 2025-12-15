@@ -204,30 +204,69 @@ class InventoryBusinessController {
   }
 
   /**
-   * Get low stock alerts
+   * Get low stock alerts - returns items that are below reorder level
    */
   async getLowStockAlerts(req, res) {
     try {
-      const { status = "active" } = req.query;
+      const db = require("../config/database");
+      const ProductServiceClient = require("../clients/productService.client");
 
+      // Get all inventory items where available stock <= reorder level
       const query = `
         SELECT 
-          sa.*,
-          i.warehouse_location,
-          i.quantity as actual_quantity,
-          i.reserved_quantity
-        FROM stock_alerts sa
-        JOIN inventory i ON i.product_id = sa.product_id
-        WHERE sa.status = $1
-        ORDER BY sa.created_at DESC
+          i.*,
+          (i.quantity - COALESCE(i.reserved_quantity, 0)) as available_quantity
+        FROM inventory i
+        WHERE (i.quantity - COALESCE(i.reserved_quantity, 0)) <= i.reorder_level
+          AND (i.quantity - COALESCE(i.reserved_quantity, 0)) >= 0
+        ORDER BY 
+          CASE 
+            WHEN (i.quantity - COALESCE(i.reserved_quantity, 0)) = 0 THEN 0
+            ELSE 1
+          END,
+          (i.quantity - COALESCE(i.reserved_quantity, 0)) ASC
       `;
 
-      const db = require("../config/database");
-      const result = await db.query(query, [status]);
+      const result = await db.query(query);
+
+      // Enrich with product details using batch fetch to avoid N+1 queries
+      let productMap = {};
+      try {
+        // Collect unique product IDs
+        const productIds = [
+          ...new Set(result.rows.map((item) => item.product_id)),
+        ];
+
+        if (productIds.length > 0) {
+          // Batch fetch all products
+          const products = await ProductServiceClient.getProductsByIds(
+            productIds
+          );
+          productMap = (products || []).reduce((acc, p) => {
+            acc[p.id] = p;
+            return acc;
+          }, {});
+        }
+      } catch (error) {
+        logger.error("Error batch fetching product details:", error.message);
+        // Continue with empty productMap, will use fallback values
+      }
+
+      // Map inventory items with product details
+      const enrichedData = result.rows.map((item) => {
+        const product = productMap[item.product_id];
+        return {
+          ...item,
+          product_name: product?.name || "Unknown Product",
+          product_sku: product?.sku || item.sku,
+          unit_price: product?.unit_price || 0,
+        };
+      });
 
       res.json({
         success: true,
-        data: result.rows,
+        count: enrichedData.length,
+        data: enrichedData,
       });
     } catch (error) {
       logger.error("Error getting low stock alerts:", error);

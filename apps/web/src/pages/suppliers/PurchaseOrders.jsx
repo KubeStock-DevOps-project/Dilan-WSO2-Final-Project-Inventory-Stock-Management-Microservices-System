@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { FiEdit, FiFilter, FiPlus, FiStar, FiTrash2 } from "react-icons/fi";
+import { FiEdit, FiFilter, FiPlus, FiTrash2 } from "react-icons/fi";
 import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
 import Card from "../../components/common/Card";
@@ -20,17 +20,17 @@ const PurchaseOrders = () => {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [showRatingModal, setShowRatingModal] = useState(false);
-  const [selectedPOForRating, setSelectedPOForRating] = useState(null);
+  // const [showRatingModal, setShowRatingModal] = useState(false);
+  // const [selectedPOForRating, setSelectedPOForRating] = useState(null);
   const [editingPO, setEditingPO] = useState(null);
   const [filter, setFilter] = useState({ status: "", supplier_id: "" });
-  const [ratingData, setRatingData] = useState({
-    rating: 5,
-    quality_rating: 5,
-    delivery_rating: 5,
-    communication_rating: 5,
-    comments: "",
-  });
+  // const [ratingData, setRatingData] = useState({
+  //   rating: 5,
+  //   quality_rating: 5,
+  //   delivery_rating: 5,
+  //   communication_rating: 5,
+  //   comments: "",
+  // });
   const [formData, setFormData] = useState({
     supplier_id: "",
     order_date: new Date().toISOString().split("T")[0],
@@ -163,36 +163,33 @@ const PurchaseOrders = () => {
     }
   };
 
-  const handleRateSupplier = (po) => {
-    setSelectedPOForRating(po);
-    setRatingData({
-      rating: 5,
-      quality_rating: 5,
-      delivery_rating: 5,
-      communication_rating: 5,
-      comments: "",
-    });
-    setShowRatingModal(true);
-  };
+  // const handleRateSupplier = (po) => {
+  //   setSelectedPOForRating(po);
+  //   setRatingData({
+  //     rating: 5,
+  //     quality_rating: 5,
+  //     delivery_rating: 5,
+  //     communication_rating: 5,
+  //     comments: "",
+  //   });
+  //   setShowRatingModal(true);
+  // };
 
-  const submitRating = async (e) => {
-    e.preventDefault();
-    try {
-      await supplierService.createSupplierRating(
-        selectedPOForRating.supplier_id,
-        {
-          purchase_order_id: selectedPOForRating.id,
-          ...ratingData,
-        }
-      );
-      toast.success("Supplier rated successfully!");
-      setShowRatingModal(false);
-      fetchPurchaseOrders();
-    } catch (error) {
-      console.error("Error rating supplier:", error);
-      toast.error(error.response?.data?.message || "Failed to rate supplier");
-    }
-  };
+  // const submitRating = async (e) => {
+  //   e.preventDefault();
+  //   try {
+  //     await supplierService.rateSupplier(selectedPOForRating.supplier_id, {
+  //       purchase_order_id: selectedPOForRating.id,
+  //       ...ratingData,
+  //     });
+  //     toast.success("Supplier rated successfully!");
+  //     setShowRatingModal(false);
+  //     fetchPurchaseOrders();
+  //   } catch (error) {
+  //     console.error("Error rating supplier:", error);
+  //     toast.error(error.response?.data?.message || "Failed to rate supplier");
+  //   }
+  // };
 
   const getStatusBadge = (status) => {
     const variants = {
@@ -277,7 +274,7 @@ const PurchaseOrders = () => {
               Confirm Receipt
             </Button>
           )}
-          {row.status === "received" && canManagePO && (
+          {/* {row.status === "received" && canManagePO && (
             <Button
               size="sm"
               variant="warning"
@@ -285,7 +282,7 @@ const PurchaseOrders = () => {
             >
               <FiStar className="mr-1" /> Rate
             </Button>
-          )}
+          )} */}
           {canManagePO && (
             <Button
               size="sm"
@@ -472,7 +469,7 @@ const PurchaseOrders = () => {
       )}
 
       {/* Rating Modal */}
-      {showRatingModal && (
+      {/* {showRatingModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <Card className="max-w-lg w-full m-4">
             <div className="p-6">
@@ -628,7 +625,7 @@ const PurchaseOrders = () => {
             </div>
           </Card>
         </div>
-      )}
+      )} */}
     </div>
   );
 };

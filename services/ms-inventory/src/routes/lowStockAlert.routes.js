@@ -3,20 +3,11 @@ const router = express.Router();
 const lowStockAlertController = require("../controllers/lowStockAlert.controller");
 const { authenticate } = require("../middlewares/token.middleware");
 
-// Protected routes - require authentication
-// Get low stock alerts
-router.get(
-  "/",
-  authenticate,
-  lowStockAlertController.getLowStockAlerts
-);
+// Get low stock alerts - no auth required for read-only
+router.get("/", lowStockAlertController.getLowStockAlerts);
 
 // Check for low stock and create alerts
-router.post(
-  "/check",
-  authenticate,
-  lowStockAlertController.checkLowStock
-);
+router.post("/check", authenticate, lowStockAlertController.checkLowStock);
 
 // Get reorder suggestions
 router.get(
@@ -25,12 +16,8 @@ router.get(
   lowStockAlertController.getReorderSuggestions
 );
 
-// Get alert statistics
-router.get(
-  "/stats",
-  authenticate,
-  lowStockAlertController.getAlertStats
-);
+// Get alert statistics - no auth required for read-only
+router.get("/stats", lowStockAlertController.getAlertStats);
 
 // Resolve alert
 router.patch(

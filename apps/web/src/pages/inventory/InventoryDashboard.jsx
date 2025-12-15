@@ -2,17 +2,21 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import {
   FiAlertTriangle,
+  FiEdit,
   FiPackage,
   FiTrendingDown,
   FiTrendingUp,
 } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
 import Badge from "../../components/common/Badge";
+import Button from "../../components/common/Button";
 import Card from "../../components/common/Card";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import Table from "../../components/common/Table";
 import { inventoryService } from "../../services/inventoryService";
 
 const InventoryDashboard = () => {
+  const navigate = useNavigate();
   const [inventory, setInventory] = useState([]);
   const [stats, setStats] = useState({
     totalItems: 0,
@@ -24,6 +28,13 @@ const InventoryDashboard = () => {
 
   useEffect(() => {
     fetchInventory();
+
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(() => {
+      fetchInventory();
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const fetchInventory = async () => {
@@ -35,11 +46,11 @@ const InventoryDashboard = () => {
 
       // Calculate stats
       const totalItems = inventoryData.length;
+      // Low stock includes ALL items at or below reorder level (including out of stock)
       const lowStock = inventoryData.filter(
         (item) =>
           Number(item.available_quantity || 0) <=
-            Number(item.reorder_level || 0) &&
-          Number(item.available_quantity || 0) > 0
+          Number(item.reorder_level || 0)
       ).length;
       const outOfStock = inventoryData.filter(
         (item) => Number(item.available_quantity || 0) === 0
@@ -135,6 +146,24 @@ const InventoryDashboard = () => {
         return <Badge variant={status.variant}>{status.label}</Badge>;
       },
     },
+    {
+      header: "Actions",
+      accessor: "actions",
+      cell: (row) => (
+        <Button
+          size="sm"
+          variant="primary"
+          onClick={() =>
+            navigate("/inventory/adjust", {
+              state: { productId: row.product_id },
+            })
+          }
+        >
+          <FiEdit size={14} className="mr-1" />
+          Adjust
+        </Button>
+      ),
+    },
   ];
 
   if (loading) {
@@ -143,9 +172,15 @@ const InventoryDashboard = () => {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-dark-900 mb-8">
-        Inventory Dashboard
-      </h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-dark-900">
+          Inventory Dashboard
+        </h1>
+        <Button variant="primary" onClick={fetchInventory}>
+          <FiPackage size={20} className="mr-2" />
+          Refresh
+        </Button>
+      </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -163,13 +198,17 @@ const InventoryDashboard = () => {
           </div>
         </Card>
 
-        <Card>
+        <Card
+          className="cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => navigate("/inventory/alerts")}
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-dark-600 text-sm mb-1">Low Stock Items</p>
               <p className="text-3xl font-bold text-warning">
                 {stats.lowStock}
               </p>
+              <p className="text-xs text-dark-500 mt-1">Click to view alerts</p>
             </div>
             <div className="p-3 bg-warning/10 rounded-lg">
               <FiAlertTriangle size={24} className="text-warning" />

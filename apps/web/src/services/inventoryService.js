@@ -13,8 +13,19 @@ export const inventoryService = {
     return response.data;
   },
 
+  // Alias for component compatibility
+  getInventoryByProduct: async (productId) => {
+    const response = await apiClient.get(API.inventory.byProductId(productId));
+    return response.data;
+  },
+
   getInventoryBySku: async (sku) => {
     const response = await apiClient.get(API.inventory.bySku(sku));
+    return response.data;
+  },
+
+  createInventory: async (inventoryData) => {
+    const response = await apiClient.post(API.inventory.base(), inventoryData);
     return response.data;
   },
 
@@ -25,7 +36,10 @@ export const inventoryService = {
 
   // Stock Adjustments
   adjustStock: async (adjustmentData) => {
-    const response = await apiClient.post(API.inventory.adjust(), adjustmentData);
+    const response = await apiClient.post(
+      API.inventory.adjust(),
+      adjustmentData
+    );
     return response.data;
   },
 
@@ -37,7 +51,10 @@ export const inventoryService = {
 
   // Reservations
   reserveStock: async (reservationData) => {
-    const response = await apiClient.post(API.inventory.reserve(), reservationData);
+    const response = await apiClient.post(
+      API.inventory.reserve(),
+      reservationData
+    );
     return response.data;
   },
 

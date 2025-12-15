@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import Card from "../../components/common/Card";
+import { FiEdit, FiPlus, FiTag, FiTrash2 } from "react-icons/fi";
 import Button from "../../components/common/Button";
-import Table from "../../components/common/Table";
+import Card from "../../components/common/Card";
 import Input from "../../components/common/Input";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
+import Table from "../../components/common/Table";
 import { productService } from "../../services/productService";
-import { FiPlus, FiEdit, FiTrash2, FiTag } from "react-icons/fi";
 
 const CategoryList = () => {
   const [categories, setCategories] = useState([]);
@@ -87,13 +87,6 @@ const CategoryList = () => {
   };
 
   const columns = [
-    {
-      header: "Code",
-      accessor: "code",
-      cell: (row) => (
-        <span className="font-mono font-semibold text-primary">{row.code}</span>
-      ),
-    },
     {
       header: "Name",
       accessor: "name",

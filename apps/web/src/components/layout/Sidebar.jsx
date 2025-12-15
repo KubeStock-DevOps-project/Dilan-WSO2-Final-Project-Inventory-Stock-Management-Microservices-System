@@ -65,6 +65,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       roles: ["admin", "warehouse_staff"],
     },
     {
+      name: "Stock Adjustment",
+      path: "/inventory/adjust",
+      icon: Calculator,
+      roles: ["admin", "warehouse_staff"],
+    },
+    {
       name: "Low Stock Alerts",
       path: "/inventory/alerts",
       icon: AlertTriangle,

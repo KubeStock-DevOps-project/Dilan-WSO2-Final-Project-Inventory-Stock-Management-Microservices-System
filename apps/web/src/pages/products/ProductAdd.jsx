@@ -32,7 +32,7 @@ const ProductAdd = () => {
   const fetchCategories = async () => {
     try {
       const response = await productService.getAllCategories();
-      setCategories(response || []);
+      setCategories(response?.data || []);
     } catch (error) {
       console.error("Error fetching categories:", error);
       toast.error("Failed to load categories");
@@ -122,11 +122,12 @@ const ProductAdd = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
               >
                 <option value="">Select a category</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
+                {categories?.length > 0 &&
+                  categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
               </select>
             </div>
 
