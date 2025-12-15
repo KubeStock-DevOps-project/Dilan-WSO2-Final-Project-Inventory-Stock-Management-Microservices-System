@@ -2,10 +2,12 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 
 // Load test stages can be configured via environment or use defaults
+// Default: Medium load profile suitable for staging environments
 let stages = [
-    { duration: '10s', target: 20 }, // Ramp up to 20 users
-    { duration: '30s', target: 20 }, // Stay at 20 users
-    { duration: '10s', target: 0 },  // Ramp down to 0
+    { duration: '30s', target: 50 },  // Ramp up to 50 users
+    { duration: '1m', target: 100 },  // Scale to 100 users
+    { duration: '2m', target: 100 },  // Sustain 100 users
+    { duration: '30s', target: 0 },   // Ramp down to 0
 ];
 
 // Check if custom stages are provided via environment
