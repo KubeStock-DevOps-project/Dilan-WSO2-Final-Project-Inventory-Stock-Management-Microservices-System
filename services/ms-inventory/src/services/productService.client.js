@@ -2,7 +2,7 @@ const axios = require("axios");
 const logger = require("../config/logger");
 
 const PRODUCT_SERVICE_URL =
-  process.env.PRODUCT_SERVICE_URL || "http://localhost:3002";
+  process.env.PRODUCT_CATALOG_SERVICE_URL || process.env.PRODUCT_SERVICE_URL || "http://localhost:3002";
 
 class ProductServiceClient {
   static async getProductById(productId) {
